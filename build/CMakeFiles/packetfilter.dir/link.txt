@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/packetfilter.dir/packetfilter.c.o -o packetfilter  libbpf/libbpf.a -lelf -lz 

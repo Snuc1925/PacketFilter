@@ -1,0 +1,37 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/maimanh/Manh/PacketFilter/build/CMakeFiles/libbpf-build"
+		},
+		{
+			"file" : "/home/maimanh/Manh/PacketFilter/build/CMakeFiles/libbpf-build.rule"
+		},
+		{
+			"file" : "/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-build.rule"
+		},
+		{
+			"file" : "/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-configure.rule"
+		},
+		{
+			"file" : "/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-patch.rule"
+		},
+		{
+			"file" : "/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-update.rule"
+		},
+		{
+			"file" : "/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-download.rule"
+		},
+		{
+			"file" : "/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-mkdir.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"libbpf"
+		],
+		"name" : "libbpf-build"
+	}
+}

@@ -1,0 +1,11 @@
+# Target labels
+ libbpf
+# Source files and their labels
+/home/maimanh/Manh/PacketFilter/build/CMakeFiles/libbpf-build
+/home/maimanh/Manh/PacketFilter/build/CMakeFiles/libbpf-build.rule
+/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-build.rule
+/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-configure.rule
+/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-patch.rule
+/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-update.rule
+/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-download.rule
+/home/maimanh/Manh/PacketFilter/build/libbpf/src/libbpf-stamp/libbpf-mkdir.rule
