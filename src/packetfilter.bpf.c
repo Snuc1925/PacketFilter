@@ -43,6 +43,8 @@ int xdp_filter(struct xdp_md *ctx) {
     // Lấy địa chỉ IP nguồn
     __u32 src_ip = ip->saddr;
 
+    // bpf_printk("Source IP: %pI4\n", &src_ip);    
+
     // Kiểm tra xem IP nguồn có trong blacklist không
     if (bpf_map_lookup_elem(&blacklist_map, &src_ip)) {
         bpf_printk("XDP: Dropping packet from blacklisted IP: %pI4\n", &src_ip);

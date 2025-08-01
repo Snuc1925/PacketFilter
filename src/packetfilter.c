@@ -58,12 +58,11 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // Gắn chương trình XDP vào network interface
-    err = packetfilter_bpf__attach(skel);
-    if (err) {
-        fprintf(stderr, "Failed to attach BPF skeleton\n");
+    struct bpf_link *link = bpf_program__attach_xdp(skel->progs.xdp_filter, ifindex);
+    if (!link) {
+        fprintf(stderr, "Failed to attach XDP program to ifindex %d\n", ifindex);
         goto cleanup;
-    }
+    }    
 
     printf("Successfully loaded and attached BPF program on interface %s\n", ifname);
 
