@@ -29,14 +29,14 @@ static char *filter_interface_name = NULL; // Tên interface
 static u_int32_t current_ifindex; // ifindex của interface
 
 // Cấu trúc key cho LPM Trie map (cần khớp với định nghĩa trong BPF code)
-struct bpf_trie_key {
+struct bpf_lpm_trie_key {
     __u32 prefixlen;
     __u32 ip; // IPv4 address (network byte order)
 };
 
 // Để theo dõi Subnet hiện tại trong blacklist map của kernel
 struct subnet_node {
-    struct bpf_trie_key key;
+    struct bpf_lpm_trie_key key;
     struct subnet_node *next;
 };
 
@@ -86,7 +86,7 @@ static int add_to_blacklist(int map_fd, const char *subnet_str) {
         return -1;
     }
 
-    struct bpf_trie_key key = {
+    struct bpf_lpm_trie_key key = {
         .prefixlen = (__u32)prefixlen,
         .ip = addr.s_addr // IP mạng (network byte order)
     };
@@ -101,7 +101,7 @@ static int add_to_blacklist(int map_fd, const char *subnet_str) {
 }
 
 // Hàm xóa một subnet khỏi blacklist map
-static int remove_from_blacklist(int map_fd, struct bpf_trie_key *key) {
+static int remove_from_blacklist(int map_fd, struct bpf_lpm_trie_key *key) {
     if (bpf_map_delete_elem(map_fd, key) != 0) {
         if (errno != ENOENT) {
             perror("Failed to delete from blacklist subnet map");
@@ -249,7 +249,7 @@ static int update_blacklist_from_config(void) {
             new_ptr = new_ptr->next;
         }
         if (!found) {
-            remove_from_blacklist(map_fd_blacklist_subnets, &current_ptr->key);
+            remove_from_blacklist(map_fd_blacklist_subnets, ¤t_ptr->key);
         }
         current_ptr = current_ptr->next;
     }
@@ -287,7 +287,7 @@ static int update_blacklist_from_config(void) {
     clock_gettime(CLOCK_MONOTONIC, &ts);
     __u64 timestamp = (__u64)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
 
-    if (bpf_map_update_elem(map_fd_update_signal, &key, &timestamp, BPF_ANY) != 0) {
+    if (bpf_map_update_elem(map_fd_update_signal, &key, ×tamp, BPF_ANY) != 0) {
         perror("Failed to signal update to kernel via update_signal_map");
     } else {
         printf("Sent update signal to kernel.\n");

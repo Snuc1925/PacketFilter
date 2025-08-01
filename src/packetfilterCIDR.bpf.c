@@ -8,18 +8,18 @@
 // Cấu trúc key cho LPM Trie map
 // ip: Địa chỉ IP của subnet (network byte order)
 // prefixlen: Độ dài tiền tố (ví dụ: 24 cho /24)
-struct bpf_trie_key {
+struct bpf_lpm_trie_key {
     __u32 prefixlen;
     __u32 ip; // IPv4 address (network byte order)
 };
 
 // Định nghĩa map để lưu trữ blacklist subnet
-// Key: bpf_trie_key (chứa subnet và prefixlen)
+// Key: bpf_lpm_trie_key (chứa subnet và prefixlen)
 // Value: Một giá trị placeholder (u8), sự tồn tại của key đã đủ
 struct {
     __uint(type, BPF_MAP_TYPE_LPM_TRIE);
     __uint(max_entries, 1024); // Số lượng subnet tối đa
-    __type(key, struct bpf_trie_key);
+    __type(key, struct bpf_lpm_trie_key);
     __type(value, __u8);
     __uint(map_flags, BPF_F_NO_PREALLOC); // Không cấp phát trước, tiết kiệm bộ nhớ
 } blacklist_subnets_map SEC(".maps"); // Đổi tên map để rõ ràng hơn
@@ -41,7 +41,12 @@ int xdp_filter(struct xdp_md *ctx) {
     __u32 update_key = 0;
     __u64 *last_update_ts = bpf_map_lookup_elem(&update_signal_map, &update_key);
     if (last_update_ts) {
+        // Trong môi trường thực, cần một logic phức tạp hơn để tránh spam log
+        // Ví dụ: chỉ in nếu timestamp thay đổi so với lần trước.
+        // Với bpf_printk cho debug, ta chấp nhận in ra mỗi khi có gói tin và user-space vừa cập nhật map.
         bpf_printk("XDP: IP blacklist was updated from user-space.\n");
+        // Lưu ý: Không nên xóa hoặc thay đổi map ở đây vì nó sẽ ảnh hưởng đến trạng thái của user-space.
+        // User-space nên quản lý việc reset tín hiệu sau khi kernel đã nhận được.
     }
 
     struct ethhdr *eth = data;
@@ -63,7 +68,7 @@ int xdp_filter(struct xdp_md *ctx) {
     __u32 src_ip = ip->saddr; // IP nguồn của gói tin (network byte order)
 
     // Tạo key để tra cứu trong LPM Trie
-    struct bpf_trie_key key = {
+    struct bpf_lpm_trie_key key = {
         .prefixlen = 32, // Khi tìm một IP cụ thể trong subnet map, dùng prefixlen 32
         .ip = src_ip
     };

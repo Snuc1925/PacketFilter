@@ -1,8 +1,2 @@
-# Tên interface mà XDP sẽ filter.
-# KHÔNG ĐƯỢC THAY ĐỔI TÊN INTERFACE KHI CHƯƠNG TRÌNH ĐANG CHẠY.
-# Nếu cần thay đổi, phải restart chương trình.
 interface=ens33
-
-# Danh sách các IP cần chặn, cách nhau bởi dấu phẩy.
-# Có thể thêm/bớt/sửa IP mà không cần restart chương trình.
-ip_blacklist=192.168.159.10
+ip_blacklist=192.168.159.0/24
