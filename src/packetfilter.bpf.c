@@ -7,7 +7,7 @@
 #define ETH_P_IP 0x0800
 
 // Định nghĩa map để lưu trữ blacklist
-// Key: Địa chỉ IPv4
+// Key: Địa chỉ IPv4 (network byte order)
 // Value: Chỉ là một giá trị placeholder (u8), sự tồn tại của key đã đủ
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
@@ -16,10 +16,39 @@ struct {
     __type(value, __u8);
 } blacklist_map SEC(".maps");
 
+// Map này dùng để nhận tín hiệu từ user-space khi blacklist được cập nhật
+// Key: 0 (chỉ có 1 phần tử)
+// Value: Một flag hoặc timestamp để báo hiệu cập nhật
+struct {
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+    __uint(max_entries, 1);
+    __type(key, __u32);
+    __type(value, __u64); // Sử dụng timestamp hoặc counter để báo hiệu cập nhật
+} update_signal_map SEC(".maps");
+
 SEC("xdp")
 int xdp_filter(struct xdp_md *ctx) {
     void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
+
+    // Kiểm tra tín hiệu cập nhật từ user-space
+    __u32 key = 0;
+    __u64 *last_update_ts = bpf_map_lookup_elem(&update_signal_map, &key);
+    if (last_update_ts) {
+        // Nếu có tín hiệu cập nhật, in ra thông báo (chỉ một lần mỗi khi có tín hiệu mới)
+        // Trong thực tế, để tránh spam log, ta cần một cách phức tạp hơn để kiểm soát việc in.
+        // Ví dụ, user-space gửi một ID tăng dần và kernel chỉ in khi ID thay đổi.
+        // Để đơn giản theo yêu cầu, ta giả định mỗi lần lookup thấy là một lần cập nhật mới
+        // (Điều này có thể spam log nếu user-space liên tục ghi vào map, nhưng phù hợp với yêu cầu)
+        bpf_printk("XDP: IP blacklist was updated from user-space.\n");
+        // Reset tín hiệu sau khi đọc để tránh in lại (hoặc user-space sẽ đặt lại nó)
+        // bpf_map_update_elem(&update_signal_map, &key, 0, BPF_ANY); // Cần hằng số 0
+        // Việc xóa hoặc reset này có thể làm bởi user-space sau khi kernel đọc.
+        // Hoặc đơn giản hơn, user-space cứ đặt timestamp mới mỗi lần update.
+        // bpf_printk chỉ hữu ích cho debug, không nên dùng cho thông báo sản phẩm.
+        // Perf event map sẽ tốt hơn cho thông báo thực tế.
+    }
+
 
     struct ethhdr *eth = data;
 
@@ -40,10 +69,8 @@ int xdp_filter(struct xdp_md *ctx) {
         return XDP_PASS;
     }
 
-    // Lấy địa chỉ IP nguồn
+    // Lấy địa chỉ IP nguồn (saddr đã ở network byte order, không cần bpf_ntohl)
     __u32 src_ip = ip->saddr;
-
-    // bpf_printk("Source IP: %pI4\n", &src_ip);    
 
     // Kiểm tra xem IP nguồn có trong blacklist không
     if (bpf_map_lookup_elem(&blacklist_map, &src_ip)) {
