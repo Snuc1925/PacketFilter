@@ -1,0 +1,7 @@
+req_rate_threshold=100
+latency_threshold_ms=500
+error_rate_threshold=50.0
+conn_rate_threshold=50
+window_size_seconds=1.0
+auto_blacklist=true
+ddos_score_threshold=200
