@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
-#define __BPF__
 #include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
 
-// Include our detector header after vmlinux.h and after defining __BPF__
+// Include our detector header
 #include "l7_ddos_detector.h"
 
 #define ETH_P_IP 0x0800
@@ -16,64 +15,58 @@
 #define HTTP_PORT 80
 #define HTTPS_PORT 443
 
-#define MAX_HTTP_HEADER_SIZE 512
-
 // Cấu trúc key cho LPM Trie map
-// ip: Địa chỉ IP của subnet (network byte order)
-// prefixlen: Độ dài tiền tố (ví dụ: 24 cho /24)
 struct bpf_trie_key {
     __u32 prefixlen;
     __u32 ip; // IPv4 address (network byte order)
 };
 
 // Định nghĩa map để lưu trữ blacklist subnet
-// Key: bpf_trie_key (chứa subnet và prefixlen)
-// Value: Một giá trị placeholder (u8), sự tồn tại của key đã đủ
 struct {
     __uint(type, BPF_MAP_TYPE_LPM_TRIE);
-    __uint(max_entries, 1024); // Số lượng subnet tối đa
+    __uint(max_entries, 1024); 
     __type(key, struct bpf_trie_key);
     __type(value, __u8);
-    __uint(map_flags, BPF_F_NO_PREALLOC); // Không cấp phát trước, tiết kiệm bộ nhớ
+    __uint(map_flags, BPF_F_NO_PREALLOC); 
 } blacklist_subnets_map SEC(".maps");
 
-// Basic IP stats for packet rate monitoring (original DDoS detection)
+// Basic IP stats for packet rate monitoring
 struct ip_stats {
-    __u64 last_seen_ns; // Thời gian thấy packet cuối cùng (nanosecond)
-    __u32 pkt_count;    // Số packet trong khoảng thời gian
+    __u64 last_seen_ns; 
+    __u32 pkt_count;    
 };
 
 // LRU hash map to track packet rates by source IP
 struct {
     __uint(type, BPF_MAP_TYPE_LRU_HASH);
     __uint(max_entries, 10000);
-    __type(key, __u32); // IP nguồn
+    __type(key, __u32); 
     __type(value, struct ip_stats);
 } ip_rate_map SEC(".maps");
 
 // Connection tracking map (TCP/UDP sessions)
 struct {
     __uint(type, BPF_MAP_TYPE_LRU_HASH);
-    __uint(max_entries, 65536); // Maximum active connections to track
+    __uint(max_entries, 65536); 
     __type(key, struct conn_key);
     __type(value, struct conn_info);
 } conn_track_map SEC(".maps");
 
-// Map for destination statistics (Layer 7 DDoS detection)
+// Map for destination statistics
 struct {
     __uint(type, BPF_MAP_TYPE_LRU_HASH);
-    __uint(max_entries, 4096); // Maximum destinations to track
-    __type(key, __u32); // Destination IP
+    __uint(max_entries, 4096); 
+    __type(key, __u32); 
     __type(value, struct dest_stats);
 } dest_stats_map SEC(".maps");
 
 // Ring buffer for reporting DDoS events to userspace
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
-    __uint(max_entries, 256 * 1024); // 256KB buffer
+    __uint(max_entries, 256 * 1024); 
 } ddos_events SEC(".maps");
 
-// Configuration map (adjustable from userspace)
+// Configuration map
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __uint(max_entries, 1);
@@ -85,70 +78,32 @@ struct {
 struct {
     __uint(type, BPF_MAP_TYPE_LRU_HASH);
     __uint(max_entries, 1024);
-    __type(key, __u32); // Source IP
-    __type(value, __u32); // Reason flags
+    __type(key, __u32); 
+    __type(value, __u32); 
 } potential_attackers_map SEC(".maps");
 
-// Map for update signal from userspace
+// Map for update signals
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __uint(max_entries, 1);
     __type(key, __u32);
-    __type(value, __u64);
+    __type(value, __u64); 
 } update_signal_map SEC(".maps");
 
-// Default thresholds (used if config not set from userspace)
-const volatile __u64 TIME_WINDOW_NS = 1 * 1000000000ULL; // 1 second
-const volatile __u32 PACKET_RATE_THRESHOLD = 1000; // 1000 packets/second
-const volatile __u32 REQ_RATE_THRESHOLD = 100;   // 100 requests/second to one destination
-const volatile __u32 LATENCY_THRESHOLD_MS = 500; // 500ms latency threshold
-const volatile __u32 CONN_RATE_THRESHOLD = 50;   // 50 new connections/second
+// Default thresholds
+const volatile __u64 TIME_WINDOW_NS = 1 * 1000000000ULL; 
+const volatile __u32 PACKET_RATE_THRESHOLD = 1000; 
+const volatile __u32 REQ_RATE_THRESHOLD = 100;   
+const volatile __u32 LATENCY_THRESHOLD_MS = 500; 
+const volatile __u32 CONN_RATE_THRESHOLD = 50;   
 
-// Detect HTTP protocol from packet data
-static __always_inline int detect_http(void *data, void *data_end, struct conn_info *conn) {
-    char *payload = data;
-    
-    // Minimum HTTP method length is 3 (GET, PUT)
-    if (payload + 3 >= (char *)data_end)
-        return 0;
-    
-    // Check for common HTTP methods
-    if (payload[0] == 'G' && payload[1] == 'E' && payload[2] == 'T' && payload[3] == ' ') {
-        conn->req_method = HTTP_METHOD_GET;
-        return 1;
-    } else if (payload[0] == 'P' && payload[1] == 'O' && payload[2] == 'S' && payload[3] == 'T' && payload[4] == ' ') {
-        conn->req_method = HTTP_METHOD_POST;
-        return 1;
-    } else if (payload[0] == 'H' && payload[1] == 'E' && payload[2] == 'A' && payload[3] == 'D' && payload[4] == ' ') {
-        conn->req_method = HTTP_METHOD_HEAD;
-        return 1;
-    } else if (payload[0] == 'P' && payload[1] == 'U' && payload[2] == 'T' && payload[3] == ' ') {
-        conn->req_method = HTTP_METHOD_PUT;
-        return 1;
-    } else if (payload[0] == 'D' && payload[1] == 'E' && payload[2] == 'L' && payload[3] == 'E' && payload[4] == 'T' && payload[5] == 'E' && payload[6] == ' ') {
-        conn->req_method = HTTP_METHOD_DELETE;
-        return 1;
-    } else if (payload[0] == 'O' && payload[1] == 'P' && payload[2] == 'T' && payload[3] == 'I' && payload[4] == 'O' && payload[5] == 'N' && payload[6] == 'S' && payload[7] == ' ') {
-        conn->req_method = HTTP_METHOD_OPTIONS;
-        return 1;
-    }
-    
-    // Check for HTTP response
-    if (payload[0] == 'H' && payload[1] == 'T' && payload[2] == 'T' && payload[3] == 'P' && payload[4] == '/') {
-        // Try to parse status code (e.g. "HTTP/1.1 200 OK")
-        if (payload + 12 < (char *)data_end) {
-            char c1 = payload[9];
-            char c2 = payload[10];
-            char c3 = payload[11];
-            if (c1 >= '0' && c1 <= '9' && c2 >= '0' && c2 <= '9' && c3 >= '0' && c3 <= '9') {
-                conn->status_code = (c1 - '0') * 100 + (c2 - '0') * 10 + (c3 - '0');
-                return 2; // HTTP response
-            }
-        }
-        return 2; // HTTP response but couldn't parse status
-    }
-    
-    return 0; // Not HTTP
+// Check if an IP is in the blacklist
+static __always_inline bool is_ip_blacklisted(__u32 ip) {
+    struct bpf_trie_key key = {
+        .prefixlen = 32,
+        .ip = ip
+    };
+    return bpf_map_lookup_elem(&blacklist_subnets_map, &key) != NULL;
 }
 
 // Update destination statistics based on new packet/request data
@@ -235,7 +190,7 @@ static __always_inline void update_dest_stats(struct conn_key *key, struct conn_
             if (event) {
                 event->dst_ip = key->dst_ip;
                 event->src_ip = key->src_ip;
-                event->request_rate = stats->request_count;
+                // event->request_count = stats->request_count;
                 event->avg_latency_ms = stats->avg_latency_ms;
                 event->blacklist_reason = reason;
                 event->protocol = conn->l7_proto;
@@ -260,19 +215,19 @@ static __always_inline void update_dest_stats(struct conn_key *key, struct conn_
     }
 }
 
-// Process TCP packet for Layer 7 analysis
+// Simplified TCP processing that should pass the verifier
 static __always_inline int process_tcp(struct xdp_md *ctx, 
                                       struct ethhdr *eth, 
                                       struct iphdr *ip, 
                                       void *data, void *data_end,
                                       __u64 current_time) {
-    struct tcphdr *tcp;
-    tcp = data + sizeof(*eth) + (ip->ihl * 4);
-    
+    // Basic bounds check for TCP header
+    struct tcphdr *tcp = (void *)(ip + 1);
     if ((void *)(tcp + 1) > data_end) {
-        return XDP_PASS; // TCP header is incomplete
+        return XDP_PASS;
     }
     
+    // Extract ports (this should be safe since we checked tcp+1 above)
     __u16 dst_port = bpf_ntohs(tcp->dest);
     __u16 src_port = bpf_ntohs(tcp->source);
     
@@ -280,23 +235,18 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
     struct conn_key key = {
         .src_ip = ip->saddr,
         .dst_ip = ip->daddr,
-        .src_port = tcp->source, // Keep network byte order for map key
-        .dst_port = tcp->dest,   // Keep network byte order for map key
+        .src_port = tcp->source,
+        .dst_port = tcp->dest,
         .protocol = TCP_PROTOCOL
     };
     
-    // TCP payload offset
-    __u32 payload_offset = sizeof(*eth) + (ip->ihl * 4) + (tcp->doff * 4);
-    void *payload = data + payload_offset;
-    
-    // Connection tracking
+    // Look up connection in our tracking map
     struct conn_info *conn = bpf_map_lookup_elem(&conn_track_map, &key);
     bool new_connection = false;
     bool is_request = false;
-    bool is_response = false;
     
+    // If not found, create a new connection entry
     if (!conn) {
-        // New connection
         struct conn_info new_conn = {
             .start_time_ns = current_time,
             .last_seen_ns = current_time,
@@ -324,6 +274,12 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
         }
         new_connection = true;
         
+        // For HTTP/HTTPS requests, assume this is a request based on port
+        if (dst_port == HTTP_PORT || dst_port == HTTPS_PORT) {
+            is_request = true;
+            conn->request_count++;
+        }
+        
         // Increment connection count for the destination
         struct dest_stats *stats = bpf_map_lookup_elem(&dest_stats_map, &key.dst_ip);
         if (stats) {
@@ -332,46 +288,14 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
     } else {
         // Update existing connection
         conn->last_seen_ns = current_time;
-    }
-    
-    // Calculate payload size
-    __u32 payload_size = 0;
-    if (payload < data_end) {
-        payload_size = (__u32)(data_end - payload);
-    }
-    
-    // Protocol-specific processing
-    if (conn->l7_proto == L7_PROTO_HTTP && payload_size > 0) {
-        // Try to detect HTTP protocol (request or response)
-        int http_type = detect_http(payload, data_end, conn);
         
-        if (http_type == 1) {
-            // HTTP request detected
-            conn->request_count++;
-            is_request = true;
-        } else if (http_type == 2) {
-            // HTTP response detected
-            is_response = true;
-        }
-    } else if (conn->l7_proto == L7_PROTO_HTTPS && payload_size > 0) {
-        // Very basic TLS detection - not parsing actual HTTPS but tracking based on port
-        // For real HTTPS inspection, SSL/TLS termination is needed
-        
-        if (new_connection) {
-            // Count new HTTPS connections
-            conn->request_count++;
-            is_request = true;
-        }
-    }
-    
-    // Update bytes counter
-    if (payload_size > 0) {
-        if (src_port < 1024 && dst_port > 1024) {
-            // Server to client
-            conn->bytes_received += payload_size;
-        } else if (dst_port < 1024 && src_port > 1024) {
-            // Client to server
-            conn->bytes_sent += payload_size;
+        // Simplification: assume client-to-server packet is a request
+        if (dst_port == HTTP_PORT || dst_port == HTTPS_PORT) {
+            // This could be a simplified heuristic without deep packet inspection
+            if (src_port > 1024 && dst_port < 1024) {
+                is_request = true;
+                conn->request_count++;
+            }
         }
     }
     
@@ -381,27 +305,11 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
     return XDP_PASS;
 }
 
-// Check if an IP is in the blacklist
-static __always_inline bool is_ip_blacklisted(__u32 ip) {
-    struct bpf_trie_key key = {
-        .prefixlen = 32,
-        .ip = ip
-    };
-    return bpf_map_lookup_elem(&blacklist_subnets_map, &key) != NULL;
-}
-
 // Main XDP program
 SEC("xdp")
 int xdp_filter(struct xdp_md *ctx) {
     void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-
-    // Kiểm tra tín hiệu cập nhật từ user-space
-    __u32 update_key = 0;
-    __u64 *last_update_ts = bpf_map_lookup_elem(&update_signal_map, &update_key);
-    if (last_update_ts) {
-        bpf_printk("XDP: IP blacklist was updated from user-space.\n");
-    }
 
     // Verify Ethernet header
     struct ethhdr *eth = data;
@@ -421,6 +329,13 @@ int xdp_filter(struct xdp_md *ctx) {
 
     __u32 src_ip = ip->saddr; // Source IP (network byte order)
     __u64 current_time = bpf_ktime_get_ns();
+    
+    // Check signal for blacklist updates
+    __u32 update_key = 0;
+    __u64 *last_update_ts = bpf_map_lookup_elem(&update_signal_map, &update_key);
+    if (last_update_ts) {
+        bpf_printk("XDP: IP blacklist was updated from user-space.\n");
+    }
     
     // Check if source IP is already blacklisted
     if (is_ip_blacklisted(src_ip)) {
@@ -446,7 +361,7 @@ int xdp_filter(struct xdp_md *ctx) {
         }
     }
     
-    // Basic packet rate checking (original functionality)
+    // Basic packet rate checking
     struct ip_stats *stats = bpf_map_lookup_elem(&ip_rate_map, &src_ip);
     if (stats) {
         if (current_time - stats->last_seen_ns > TIME_WINDOW_NS) {
@@ -474,7 +389,7 @@ int xdp_filter(struct xdp_md *ctx) {
             }
         }
     } else {
-        // IP mới, tạo entry mới
+        // New IP, create entry
         struct ip_stats new_stats = { .last_seen_ns = current_time, .pkt_count = 1 };
         bpf_map_update_elem(&ip_rate_map, &src_ip, &new_stats, BPF_ANY);
     }
@@ -482,10 +397,6 @@ int xdp_filter(struct xdp_md *ctx) {
     // Process Layer 4 protocols for L7 DDoS detection
     if (ip->protocol == TCP_PROTOCOL) {
         return process_tcp(ctx, eth, ip, data, data_end, current_time);
-    } else if (ip->protocol == UDP_PROTOCOL) {
-        // UDP processing would be similar to TCP but with UDP specifics
-        // For brevity, we're focusing on TCP in this implementation
-        return XDP_PASS;
     }
 
     return XDP_PASS; // Allow packet by default
