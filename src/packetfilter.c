@@ -398,7 +398,6 @@ static int update_l7_config_from_file(void) {
 }
 
 // Print DDoS event information
-// Print DDoS event information
 static void print_ddos_event(struct ddos_event *event) {
     char src_ip_str[INET_ADDRSTRLEN];
     char dst_ip_str[INET_ADDRSTRLEN];

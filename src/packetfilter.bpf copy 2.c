@@ -30,19 +30,30 @@ struct {
     __uint(map_flags, BPF_F_NO_PREALLOC); 
 } blacklist_subnets_map SEC(".maps");
 
-// Basic IP stats for packet rate monitoring
-struct ip_stats {
-    __u64 last_seen_ns; 
-    __u32 pkt_count;    
+// Enhanced rate tracking structure with fixed time buckets
+#define RATE_BUCKETS 10   // Track 10 one-second buckets
+struct rate_tracker {
+    __u64 bucket_start_ns;        // Start timestamp of the oldest bucket
+    __u32 counts[RATE_BUCKETS];   // Count for each second bucket
+    __u32 current_bucket;         // Index of current bucket
+    __u32 total_count;            // Total across all buckets
 };
 
-// LRU hash map to track packet rates by source IP
+// LRU hash map for improved packet rate tracking
 struct {
     __uint(type, BPF_MAP_TYPE_LRU_HASH);
     __uint(max_entries, 10000);
-    __type(key, __u32); 
-    __type(value, struct ip_stats);
-} ip_rate_map SEC(".maps");
+    __type(key, __u32);  // Source IP
+    __type(value, struct rate_tracker);
+} packet_rate_map SEC(".maps");
+
+// LRU hash map for improved HTTP request rate tracking
+struct {
+    __uint(type, BPF_MAP_TYPE_LRU_HASH);
+    __uint(max_entries, 10000);
+    __type(key, __u32);  // Source IP
+    __type(value, struct rate_tracker);
+} http_rate_map SEC(".maps");
 
 // Connection tracking map (TCP/UDP sessions)
 struct {
@@ -91,10 +102,9 @@ struct {
 } update_signal_map SEC(".maps");
 
 // Default thresholds
-const volatile __u64 TIME_WINDOW_NS = 1 * 1000000000ULL; 
+const volatile __u64 TIME_WINDOW_NS = 1 * 1000000000ULL; // 1 second
 const volatile __u32 PACKET_RATE_THRESHOLD = 1000; 
 const volatile __u32 REQ_RATE_THRESHOLD = 100;   
-const volatile __u32 LATENCY_THRESHOLD_MS = 500; 
 const volatile __u32 CONN_RATE_THRESHOLD = 50;   
 
 // Check if an IP is in the blacklist
@@ -133,26 +143,8 @@ static __always_inline void update_dest_stats(struct conn_key *key, struct conn_
             stats->error_count++;
         }
         
-        // Calculate latency for responses
-        if (!is_request && conn->start_time_ns > 0) {
-            __u32 latency_ms = (__u32)((current_time - conn->start_time_ns) / 1000000);
-            
-            // Update max latency
-            if (latency_ms > stats->max_latency_ms) {
-                stats->max_latency_ms = latency_ms;
-            }
-            
-            // Update average latency (simple moving average)
-            if (stats->avg_latency_ms == 0) {
-                stats->avg_latency_ms = latency_ms;
-            } else {
-                stats->avg_latency_ms = (stats->avg_latency_ms * 3 + latency_ms) / 4; // Weighted average
-            }
-        }
-        
         // Calculate DDoS score based on various factors
         __u32 req_threshold = config ? config->req_rate_threshold : REQ_RATE_THRESHOLD;
-        __u32 latency_threshold = config ? config->latency_threshold_ms : LATENCY_THRESHOLD_MS;
         __u32 conn_threshold = config ? config->conn_rate_threshold : CONN_RATE_THRESHOLD;
         
         __u32 score = 0;
@@ -162,12 +154,6 @@ static __always_inline void update_dest_stats(struct conn_key *key, struct conn_
         if (stats->request_count > req_threshold) {
             score += stats->request_count * 100 / req_threshold;
             reason |= DDOS_REASON_REQ_RATE;
-        }
-        
-        // Latency factor
-        if (stats->avg_latency_ms > latency_threshold) {
-            score += stats->avg_latency_ms * 100 / latency_threshold;
-            reason |= DDOS_REASON_LATENCY;
         }
         
         // Connection rate factor
@@ -190,8 +176,8 @@ static __always_inline void update_dest_stats(struct conn_key *key, struct conn_
             if (event) {
                 event->dst_ip = key->dst_ip;
                 event->src_ip = key->src_ip;
-                // event->request_count = stats->request_count;
-                event->avg_latency_ms = stats->avg_latency_ms;
+                event->request_rate = stats->request_count;
+                event->avg_latency_ms = 0; // No latency tracking
                 event->blacklist_reason = reason;
                 event->protocol = conn->l7_proto;
                 event->timestamp = current_time;
@@ -212,6 +198,91 @@ static __always_inline void update_dest_stats(struct conn_key *key, struct conn_
             .blacklist_reason = 0
         };
         bpf_map_update_elem(&dest_stats_map, &key->dst_ip, &new_stats, BPF_ANY);
+    }
+}
+
+// Accurately track rate (packets or requests) using a rolling window of buckets
+static __always_inline void track_rate(__u32 src_ip, __u64 current_time, bool is_http_request) {
+    struct {
+        __uint(type, BPF_MAP_TYPE_LRU_HASH);
+        __uint(max_entries, 10000);
+        __type(key, __u32);
+        __type(value, struct rate_tracker);
+    } *target_map = is_http_request ? &http_rate_map : &packet_rate_map;
+    
+    __u32 threshold = is_http_request ? REQ_RATE_THRESHOLD : PACKET_RATE_THRESHOLD;
+    struct rate_tracker *tracker = bpf_map_lookup_elem(target_map, &src_ip);
+    
+    if (tracker) {
+        // Calculate how many seconds have passed since the start of our tracking window
+        __u64 seconds_passed = (current_time - tracker->bucket_start_ns) / TIME_WINDOW_NS;
+        
+        if (seconds_passed == 0) {
+            // Still in the same second as last update
+            tracker->counts[tracker->current_bucket]++;
+            tracker->total_count++;
+        } else if (seconds_passed < RATE_BUCKETS) {
+            // Within our tracking window, but in a new second bucket
+            __u32 new_bucket = (tracker->current_bucket + seconds_passed) % RATE_BUCKETS;
+            
+            // Subtract the count that will be overwritten
+            tracker->total_count -= tracker->counts[new_bucket];
+            
+            // Zero out any buckets we're skipping over
+            for (__u32 i = 1; i <= seconds_passed; i++) {
+                __u32 idx = (tracker->current_bucket + i) % RATE_BUCKETS;
+                if (idx != new_bucket) { // Only clear buckets we're not about to use
+                    tracker->total_count -= tracker->counts[idx];
+                    tracker->counts[idx] = 0;
+                }
+            }
+            
+            // Set new values
+            tracker->counts[new_bucket] = 1;
+            tracker->current_bucket = new_bucket;
+            tracker->bucket_start_ns += seconds_passed * TIME_WINDOW_NS;
+            tracker->total_count++;
+        } else {
+            // More than our tracking window has passed, reset everything
+            __builtin_memset(tracker->counts, 0, sizeof(tracker->counts));
+            tracker->bucket_start_ns = current_time;
+            tracker->current_bucket = 0;
+            tracker->counts[0] = 1;
+            tracker->total_count = 1;
+        }
+        
+        // Check if rate exceeds threshold
+        if (tracker->total_count > threshold) {
+            __u32 reason = is_http_request ? DDOS_REASON_REQ_RATE : DDOS_REASON_CONN_RATE;
+            bpf_map_update_elem(&potential_attackers_map, &src_ip, &reason, BPF_ANY);
+            
+            // Send event to userspace
+            struct ddos_event *event = bpf_ringbuf_reserve(&ddos_events, sizeof(*event), 0);
+            if (event) {
+                event->dst_ip = 0; // Generic event not tied to a specific destination
+                event->src_ip = src_ip;
+                event->request_rate = tracker->total_count / RATE_BUCKETS; // Average rate per second
+                event->avg_latency_ms = 0; // No latency tracking
+                event->blacklist_reason = reason;
+                event->protocol = is_http_request ? L7_PROTO_HTTP : 0;
+                event->timestamp = current_time;
+                bpf_ringbuf_submit(event, 0);
+            }
+        }
+    } else {
+        // Create new tracker
+        struct rate_tracker new_tracker = {
+            .bucket_start_ns = current_time,
+            .current_bucket = 0,
+            .total_count = 1
+        };
+        
+        // Initialize all buckets to 0
+        __builtin_memset(new_tracker.counts, 0, sizeof(new_tracker.counts));
+        // Set first bucket to 1
+        new_tracker.counts[0] = 1;
+        
+        bpf_map_update_elem(target_map, &src_ip, &new_tracker, BPF_ANY);
     }
 }
 
@@ -278,6 +349,9 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
         if (dst_port == HTTP_PORT || dst_port == HTTPS_PORT) {
             is_request = true;
             conn->request_count++;
+            
+            // Track HTTP request rate
+            track_rate(ip->saddr, current_time, true);
         }
         
         // Increment connection count for the destination
@@ -295,6 +369,9 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
             if (src_port > 1024 && dst_port < 1024) {
                 is_request = true;
                 conn->request_count++;
+                
+                // Track HTTP request rate
+                track_rate(ip->saddr, current_time, true);
             }
         }
     }
@@ -361,38 +438,8 @@ int xdp_filter(struct xdp_md *ctx) {
         }
     }
     
-    // Basic packet rate checking
-    struct ip_stats *stats = bpf_map_lookup_elem(&ip_rate_map, &src_ip);
-    if (stats) {
-        if (current_time - stats->last_seen_ns > TIME_WINDOW_NS) {
-            stats->pkt_count = 1;
-            stats->last_seen_ns = current_time;
-        } else {
-            stats->pkt_count++;
-        }
-        
-        // Check if packet rate exceeds threshold
-        if (stats->pkt_count > PACKET_RATE_THRESHOLD) {
-            __u32 reason = DDOS_REASON_REQ_RATE;
-            bpf_map_update_elem(&potential_attackers_map, &src_ip, &reason, BPF_ANY);
-            
-            struct ddos_event *event = bpf_ringbuf_reserve(&ddos_events, sizeof(*event), 0);
-            if (event) {
-                event->dst_ip = 0; // Not targeting specific destination
-                event->src_ip = src_ip;
-                event->request_rate = stats->pkt_count;
-                event->avg_latency_ms = 0;
-                event->blacklist_reason = reason;
-                event->protocol = 0;
-                event->timestamp = current_time;
-                bpf_ringbuf_submit(event, 0);
-            }
-        }
-    } else {
-        // New IP, create entry
-        struct ip_stats new_stats = { .last_seen_ns = current_time, .pkt_count = 1 };
-        bpf_map_update_elem(&ip_rate_map, &src_ip, &new_stats, BPF_ANY);
-    }
+    // Track packet rate for this source IP using the new accurate tracking method
+    track_rate(src_ip, current_time, false); // false = not HTTP specific
     
     // Process Layer 4 protocols for L7 DDoS detection
     if (ip->protocol == TCP_PROTOCOL) {

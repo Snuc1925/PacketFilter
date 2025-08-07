@@ -36,6 +36,13 @@ struct ip_stats {
     __u32 pkt_count;    
 };
 
+// Structure for tracking request rates over time windows
+struct req_rate_stats {
+    __u64 window_start_ns;    // Start of the current window
+    __u32 request_count;      // Number of requests in current window
+    __u64 last_request_ns;    // Last request timestamp
+};
+
 // LRU hash map to track packet rates by source IP
 struct {
     __uint(type, BPF_MAP_TYPE_LRU_HASH);
@@ -43,6 +50,14 @@ struct {
     __type(key, __u32); 
     __type(value, struct ip_stats);
 } ip_rate_map SEC(".maps");
+
+// Map to track HTTP/HTTPS request rates by source IP
+struct {
+    __uint(type, BPF_MAP_TYPE_LRU_HASH);
+    __uint(max_entries, 10000);
+    __type(key, __u32); // Source IP
+    __type(value, struct req_rate_stats);
+} request_rate_map SEC(".maps");
 
 // Connection tracking map (TCP/UDP sessions)
 struct {
@@ -90,11 +105,9 @@ struct {
     __type(value, __u64); 
 } update_signal_map SEC(".maps");
 
-// Default thresholds
-const volatile __u64 TIME_WINDOW_NS = 1 * 1000000000ULL; 
+const volatile __u64 TIME_WINDOW_NS = 1 * 1000000000ULL; // 1 second
 const volatile __u32 PACKET_RATE_THRESHOLD = 1000; 
 const volatile __u32 REQ_RATE_THRESHOLD = 100;   
-const volatile __u32 LATENCY_THRESHOLD_MS = 500; 
 const volatile __u32 CONN_RATE_THRESHOLD = 50;   
 
 // Check if an IP is in the blacklist
@@ -110,13 +123,11 @@ static __always_inline bool is_ip_blacklisted(__u32 ip) {
 static __always_inline void update_dest_stats(struct conn_key *key, struct conn_info *conn, __u64 current_time, bool is_request) {
     struct dest_stats *stats = bpf_map_lookup_elem(&dest_stats_map, &key->dst_ip);
     
-    // Get configuration
     __u32 config_key = 0;
     struct l7_config *config = bpf_map_lookup_elem(&l7_config_map, &config_key);
     __u64 window_size = config ? config->window_size_ns : TIME_WINDOW_NS;
     
     if (stats) {
-        // Reset counters if window has passed
         if (current_time - stats->window_start_ns > window_size) {
             stats->window_start_ns = current_time;
             stats->request_count = 0;
@@ -133,26 +144,8 @@ static __always_inline void update_dest_stats(struct conn_key *key, struct conn_
             stats->error_count++;
         }
         
-        // Calculate latency for responses
-        if (!is_request && conn->start_time_ns > 0) {
-            __u32 latency_ms = (__u32)((current_time - conn->start_time_ns) / 1000000);
-            
-            // Update max latency
-            if (latency_ms > stats->max_latency_ms) {
-                stats->max_latency_ms = latency_ms;
-            }
-            
-            // Update average latency (simple moving average)
-            if (stats->avg_latency_ms == 0) {
-                stats->avg_latency_ms = latency_ms;
-            } else {
-                stats->avg_latency_ms = (stats->avg_latency_ms * 3 + latency_ms) / 4; // Weighted average
-            }
-        }
-        
-        // Calculate DDoS score based on various factors
+        // Calculate DDoS score based on various factors (removed latency factor)
         __u32 req_threshold = config ? config->req_rate_threshold : REQ_RATE_THRESHOLD;
-        __u32 latency_threshold = config ? config->latency_threshold_ms : LATENCY_THRESHOLD_MS;
         __u32 conn_threshold = config ? config->conn_rate_threshold : CONN_RATE_THRESHOLD;
         
         __u32 score = 0;
@@ -162,12 +155,6 @@ static __always_inline void update_dest_stats(struct conn_key *key, struct conn_
         if (stats->request_count > req_threshold) {
             score += stats->request_count * 100 / req_threshold;
             reason |= DDOS_REASON_REQ_RATE;
-        }
-        
-        // Latency factor
-        if (stats->avg_latency_ms > latency_threshold) {
-            score += stats->avg_latency_ms * 100 / latency_threshold;
-            reason |= DDOS_REASON_LATENCY;
         }
         
         // Connection rate factor
@@ -190,8 +177,8 @@ static __always_inline void update_dest_stats(struct conn_key *key, struct conn_
             if (event) {
                 event->dst_ip = key->dst_ip;
                 event->src_ip = key->src_ip;
-                // event->request_count = stats->request_count;
-                event->avg_latency_ms = stats->avg_latency_ms;
+                event->request_rate = stats->request_count;
+                event->avg_latency_ms = 0; 
                 event->blacklist_reason = reason;
                 event->protocol = conn->l7_proto;
                 event->timestamp = current_time;
@@ -199,7 +186,6 @@ static __always_inline void update_dest_stats(struct conn_key *key, struct conn_
             }
         }
     } else {
-        // Create new stats entry
         struct dest_stats new_stats = {
             .last_updated_ns = current_time,
             .window_start_ns = current_time,
@@ -212,6 +198,57 @@ static __always_inline void update_dest_stats(struct conn_key *key, struct conn_
             .blacklist_reason = 0
         };
         bpf_map_update_elem(&dest_stats_map, &key->dst_ip, &new_stats, BPF_ANY);
+    }
+}
+
+// Track HTTP/HTTPS request rates per source IP address
+static __always_inline void track_request_rate(__u32 src_ip, __u64 current_time) {
+    struct req_rate_stats *stats = bpf_map_lookup_elem(&request_rate_map, &src_ip);
+    
+    if (stats) {
+        // If the current window has passed, start a new window
+        if (current_time - stats->window_start_ns > TIME_WINDOW_NS) {
+            // Calculate requests per second from previous window
+            __u32 requests_per_second = stats->request_count;
+            
+            bpf_printk("Số lượng requests / s là: %d", requests_per_second);
+            // Check if the rate exceeds threshold
+            if (requests_per_second > REQ_RATE_THRESHOLD) {
+                __u32 reason = DDOS_REASON_REQ_RATE;
+                bpf_map_update_elem(&potential_attackers_map, &src_ip, &reason, BPF_ANY);
+                
+                // Send event to userspace
+                struct ddos_event *event = bpf_ringbuf_reserve(&ddos_events, sizeof(*event), 0);
+                if (event) {
+                    event->dst_ip = 0; // Not targeting specific destination
+                    event->src_ip = src_ip;
+                    event->request_rate = requests_per_second;
+                    event->avg_latency_ms = 0; // No latency tracking
+                    event->blacklist_reason = reason;
+                    event->protocol = L7_PROTO_HTTP; // Assuming HTTP/HTTPS
+                    event->timestamp = current_time;
+                    bpf_ringbuf_submit(event, 0);
+                }
+            }
+            
+            // Reset for new window
+            stats->window_start_ns = current_time;
+            stats->request_count = 1; // Count this request
+        } else {
+            // Still in same window, increment counter
+            stats->request_count++;
+        }
+        
+        stats->last_request_ns = current_time;
+    } else {
+        // First request from this IP
+        struct req_rate_stats new_stats = {
+            .window_start_ns = current_time,
+            .request_count = 1,
+            .last_request_ns = current_time
+        };
+        
+        bpf_map_update_elem(&request_rate_map, &src_ip, &new_stats, BPF_ANY);
     }
 }
 
@@ -239,6 +276,14 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
         .dst_port = tcp->dest,
         .protocol = TCP_PROTOCOL
     };
+
+    if (bpf_ntohs(key.dst_port) < 1024) {
+        bpf_printk("TCP packet: src_ip=%pI4, dst_ip=%pI4, src_port=%d, dst_port=%d\n",
+           &key.src_ip, &key.dst_ip,
+           bpf_ntohs(key.src_port), bpf_ntohs(key.dst_port));
+    }
+
+
     
     // Look up connection in our tracking map
     struct conn_info *conn = bpf_map_lookup_elem(&conn_track_map, &key);
@@ -278,6 +323,9 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
         if (dst_port == HTTP_PORT || dst_port == HTTPS_PORT) {
             is_request = true;
             conn->request_count++;
+            
+            // Track request rate specifically for HTTP/HTTPS
+            track_request_rate(ip->saddr, current_time);
         }
         
         // Increment connection count for the destination
@@ -295,6 +343,9 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
             if (src_port > 1024 && dst_port < 1024) {
                 is_request = true;
                 conn->request_count++;
+                
+                // Track request rate specifically for HTTP/HTTPS
+                track_request_rate(ip->saddr, current_time);
             }
         }
     }
@@ -334,12 +385,12 @@ int xdp_filter(struct xdp_md *ctx) {
     __u32 update_key = 0;
     __u64 *last_update_ts = bpf_map_lookup_elem(&update_signal_map, &update_key);
     if (last_update_ts) {
-        bpf_printk("XDP: IP blacklist was updated from user-space.\n");
+        // bpf_printk("XDP: IP blacklist was updated from user-space.\n");
     }
     
     // Check if source IP is already blacklisted
     if (is_ip_blacklisted(src_ip)) {
-        bpf_printk("XDP: Dropping packet from blacklisted IP/subnet: %pI4\n", &src_ip);
+        // bpf_printk("XDP: Dropping packet from blacklisted IP/subnet: %pI4\n", &src_ip);
         return XDP_DROP;
     }
     
@@ -362,6 +413,7 @@ int xdp_filter(struct xdp_md *ctx) {
     }
     
     // Basic packet rate checking
+    // This is separate from the HTTP request rate tracking
     struct ip_stats *stats = bpf_map_lookup_elem(&ip_rate_map, &src_ip);
     if (stats) {
         if (current_time - stats->last_seen_ns > TIME_WINDOW_NS) {
@@ -381,7 +433,7 @@ int xdp_filter(struct xdp_md *ctx) {
                 event->dst_ip = 0; // Not targeting specific destination
                 event->src_ip = src_ip;
                 event->request_rate = stats->pkt_count;
-                event->avg_latency_ms = 0;
+                event->avg_latency_ms = 0; // No latency tracking
                 event->blacklist_reason = reason;
                 event->protocol = 0;
                 event->timestamp = current_time;
