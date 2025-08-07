@@ -30,18 +30,6 @@ struct {
     __uint(map_flags, BPF_F_NO_PREALLOC); 
 } blacklist_subnets_map SEC(".maps");
 
-// Basic IP stats for packet rate monitoring
-struct ip_stats {
-    __u64 last_seen_ns; 
-    __u32 pkt_count;    
-};
-
-// Structure for tracking request rates over time windows
-struct req_rate_stats {
-    __u64 window_start_ns;    // Start of the current window
-    __u32 request_count;      // Number of requests in current window
-    __u64 last_request_ns;    // Last request timestamp
-};
 
 // LRU hash map to track packet rates by source IP
 struct {
@@ -283,8 +271,6 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
            bpf_ntohs(key.src_port), bpf_ntohs(key.dst_port));
     }
 
-
-    
     // Look up connection in our tracking map
     struct conn_info *conn = bpf_map_lookup_elem(&conn_track_map, &key);
     bool new_connection = false;
@@ -416,12 +402,13 @@ int xdp_filter(struct xdp_md *ctx) {
     // This is separate from the HTTP request rate tracking
     struct ip_stats *stats = bpf_map_lookup_elem(&ip_rate_map, &src_ip);
     if (stats) {
-        if (current_time - stats->last_seen_ns > TIME_WINDOW_NS) {
+        if (current_time - stats->window_start_ns > TIME_WINDOW_NS) {
             stats->pkt_count = 1;
+            stats->window_start_ns = current_time;
+            bpf_printk("Total number of packet in last second: %d", stats->pkt_count);
         } else {
             stats->pkt_count++;
         }
-        stats->last_seen_ns = current_time;
         
         // Check if packet rate exceeds threshold
         if (stats->pkt_count > PACKET_RATE_THRESHOLD) {
@@ -432,7 +419,7 @@ int xdp_filter(struct xdp_md *ctx) {
             if (event) {
                 event->dst_ip = 0; // Not targeting specific destination
                 event->src_ip = src_ip;
-                event->request_rate = stats->pkt_count;
+                event->request_rate = stats->pkt_count; 
                 event->avg_latency_ms = 0; // No latency tracking
                 event->blacklist_reason = reason;
                 event->protocol = 0;
@@ -442,7 +429,7 @@ int xdp_filter(struct xdp_md *ctx) {
         }
     } else {
         // New IP, create entry
-        struct ip_stats new_stats = { .last_seen_ns = current_time, .pkt_count = 1 };
+        struct ip_stats new_stats = { .window_start_ns = current_time, .pkt_count = 1 };
         bpf_map_update_elem(&ip_rate_map, &src_ip, &new_stats, BPF_ANY);
     }
     

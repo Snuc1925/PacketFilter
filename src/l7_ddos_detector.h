@@ -35,6 +35,19 @@
 #define DDOS_REASON_INCOMPLETE     (1 << 4)  // High rate of incomplete requests
 #define DDOS_REASON_MANUAL         (1 << 7)  // Manually detected
 
+// Basic IP stats for packet rate monitoring
+struct ip_stats {
+    __u64 window_start_ns; 
+    __u32 pkt_count;    
+};
+
+// Structure for tracking request rates over time windows
+struct req_rate_stats {
+    __u64 window_start_ns;    // Start of the current window
+    __u32 request_count;      // Number of requests in current window
+    __u64 last_request_ns;    // Last request timestamp
+};
+
 // Connection tracking key (source IP, source port, destination IP, destination port)
 struct conn_key {
     __u32 src_ip;    // Source IP (network byte order)
@@ -93,5 +106,7 @@ struct ddos_event {
     __u32 protocol;                // L7 protocol
     __u64 timestamp;               // Event time
 };
+
+
 
 #endif /* L7_DDOS_DETECTOR_H */
