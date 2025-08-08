@@ -8,5 +8,5 @@ conn_rate_threshold=50
 window_size_seconds=1.0
 
 # Auto blacklist configuration
-auto_blacklist=true
+auto_blacklist=false
 ddos_score_threshold=200

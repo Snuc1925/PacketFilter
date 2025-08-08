@@ -194,12 +194,22 @@ static __always_inline void track_request_rate(__u32 src_ip, __u64 current_time)
     struct req_rate_stats *stats = bpf_map_lookup_elem(&request_rate_map, &src_ip);
     
     if (stats) {
-        // If the current window has passed, start a new window
+        bpf_printk("Found");
+        bpf_printk("current_time: %llu", current_time);
+        bpf_printk("window_start_ns: %llu", stats->window_start_ns);
+        bpf_printk("difference_ns: %llu", current_time - stats->window_start_ns);
+        bpf_printk("TIME_WINDOW_NS: %llu", (__u64)TIME_WINDOW_NS);
+        
+        // Nếu cửa sổ hiện tại đã trôi qua
         if (current_time - stats->window_start_ns > TIME_WINDOW_NS) {
-            // Calculate requests per second from previous window
-            __u32 requests_per_second = stats->request_count;
-            
-            bpf_printk("Số lượng requests / s là: %d", requests_per_second);
+            // Tính toán requests per second từ cửa sổ TRƯỚC ĐÓ
+            __u64 elapsed_ns = current_time - stats->window_start_ns;
+            // Chuyển nano giây sang giây để tính rate
+            // __u32 requests_per_second = (__u32)(((__u64)stats->request_count * 1000000000ULL));
+            // HOẶC nếu bạn muốn tính rate cho mỗi TIME_WINDOW_NS (1 giây) thì chỉ cần stats->request_count
+            // __u32 requests_per_second = stats->request_count; // Nếu TIME_WINDOW_NS = 1 giây
+        
+            bpf_printk("The number of request/s: %d", stats->request_count);
             // Check if the rate exceeds threshold
             if (requests_per_second > REQ_RATE_THRESHOLD) {
                 __u32 reason = DDOS_REASON_REQ_RATE;
@@ -225,10 +235,11 @@ static __always_inline void track_request_rate(__u32 src_ip, __u64 current_time)
         } else {
             // Still in same window, increment counter
             stats->request_count++;
+            bpf_printk("Ditmechungmay");
         }
         
         stats->last_request_ns = current_time;
-    } else {
+    } else {     
         // First request from this IP
         struct req_rate_stats new_stats = {
             .window_start_ns = current_time,
@@ -266,7 +277,7 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
     };
 
     if (bpf_ntohs(key.dst_port) < 1024) {
-        bpf_printk("TCP packet: src_ip=%pI4, dst_ip=%pI4, src_port=%d, dst_port=%d\n",
+        bpf_printk("TCP packet: src_ip=%pI4, dst_ip=%pI4, src_port=%d, dst_port=%d",
            &key.src_ip, &key.dst_ip,
            bpf_ntohs(key.src_port), bpf_ntohs(key.dst_port));
     }
@@ -309,6 +320,7 @@ static __always_inline int process_tcp(struct xdp_md *ctx,
         if (dst_port == HTTP_PORT || dst_port == HTTPS_PORT) {
             is_request = true;
             conn->request_count++;
+
             
             // Track request rate specifically for HTTP/HTTPS
             track_request_rate(ip->saddr, current_time);
