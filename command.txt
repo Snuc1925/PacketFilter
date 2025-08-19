@@ -1,0 +1,5 @@
+sudo ip netns exec attacker-ns wrk -t1 -c4 -d30s http://192.168.100.1/
+sudo ip netns exec attacker-ns ab -n 100 -c 4 http://192.168.100.1/
+
+sudo systemctl stop nginx
+sudo systemctl restart nginx

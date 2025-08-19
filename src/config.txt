@@ -1,2 +1,2 @@
-interface=ens33
-ip_blacklist=192.168.159.0/24
+interface=veth-srv
+ip_blacklist=192.168.100.0/24
