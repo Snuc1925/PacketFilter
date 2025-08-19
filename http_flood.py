@@ -4,7 +4,7 @@ import time
 
 # --- Configuration ---
 TARGET_URL = 'http://192.168.100.1/'
-REQUEST_COUNT = 1000
+REQUEST_COUNT = 300
 CONCURRENT_REQUESTS = 200 # How many requests to run in parallel at a time
 
 # --- Counters for statistics ---

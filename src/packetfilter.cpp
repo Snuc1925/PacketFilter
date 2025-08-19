@@ -21,12 +21,21 @@
 // Define event buffer size for inotify
 #define EVENT_SIZE (sizeof(struct inotify_event) + NAME_MAX + 1)
 #define BUF_LEN (1024 * EVENT_SIZE)
+#define MAX_ENTRIES 1024  // Maximum number of tracked IPs
 
 #define DEFAULT_CONFIG_FILE_RELATIVE "../src/config.txt"
+
+// Structure for packet statistics by IP (must match the BPF struct)
+struct packet_stats {
+    __u64 dropped;  // Number of dropped packets
+    __u64 passed;   // Number of passed packets
+};
 
 static volatile bool exiting = false;
 static int map_fd_blacklist_subnets; // File descriptor của blacklist map (giờ là LPM Trie)
 static int map_fd_update_signal;     // File descriptor của update signal map
+static int map_fd_ip_stats;          // File descriptor for IP statistics map
+static int map_fd_global_stats;      // File descriptor for global statistics map
 static char *config_file_path_abs = NULL; // Đường dẫn tuyệt đối tới file config
 static char *filter_interface_name = NULL; // Tên interface
 static u_int32_t current_ifindex; // ifindex của interface
@@ -36,12 +45,59 @@ static void sig_handler(int sig) {
     exiting = true;
 }
 
+// Function to print packet statistics when program exits
+void print_statistics() {
+    printf("\n-------- Packet Filter Statistics --------\n");
+    
+    // Print global statistics
+    __u32 key = 0;
+    __u64 dropped = 0;
+    if (bpf_map_lookup_elem(map_fd_global_stats, &key, &dropped) == 0) {
+        key = 1;
+        __u64 passed = 0;
+        if (bpf_map_lookup_elem(map_fd_global_stats, &key, &passed) == 0) {
+            printf("Total packets: %llu (Dropped: %llu, Passed: %llu)\n", 
+                dropped + passed, dropped, passed);
+        }
+    }
+    
+    // Print per-IP statistics
+    printf("\nPer-IP Statistics:\n");
+    printf("%-15s  %10s  %10s  %10s\n", "IP Address", "Dropped", "Passed", "Total");
+    printf("---------------------------------------------------\n");
+    
+    __u32 ip_key = 0;
+    struct packet_stats stats;
+    int count = 0;
+    
+    // Use BPF_MAP_GET_NEXT_KEY to iterate through all IP addresses in the map
+    while (bpf_map_get_next_key(map_fd_ip_stats, count == 0 ? NULL : &ip_key, &ip_key) == 0) {
+        if (bpf_map_lookup_elem(map_fd_ip_stats, &ip_key, &stats) == 0 && (stats.dropped > 0 || stats.passed > 0)) {
+            // Convert IP to human-readable form
+            struct in_addr addr;
+            addr.s_addr = ip_key;
+            char ip_str[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &addr, ip_str, sizeof(ip_str));
+            
+            printf("%-15s  %10llu  %10llu  %10llu\n", ip_str, stats.dropped, stats.passed, 
+                stats.dropped + stats.passed);
+            count++;
+        }
+    }
+    
+    if (count == 0) {
+        printf("No packet statistics recorded.\n");
+    }
+    
+    printf("\n------------------------------------------\n");
+}
+
 int main(int argc, char **argv) {
-    struct packetfilter_bpf *skel;
-    struct bpf_link *link;
+    struct packetfilter_bpf *skel = NULL;
+    struct bpf_link *link = NULL;
     int err = 0;
-    int inotify_fd;
-    int watch_descriptor;
+    int inotify_fd = -1;
+    int watch_descriptor = -1;
     char buffer[BUF_LEN];
 
     // Lấy đường dẫn của executable
@@ -81,14 +137,16 @@ int main(int argc, char **argv) {
 
     if (argc != 1) {
         fprintf(stderr, "Usage: %s\n", argv[0]);
-        return 1;
+        err = 1;
+        goto cleanup_early;
     }
 
     // Mở, tải và xác thực chương trình BPF
     skel = packetfilter_bpf__open_and_load();
     if (!skel) {
         fprintf(stderr, "Failed to open and load BPF skeleton\n");
-        return 1;
+        err = 1;
+        goto cleanup_early;
     }
 
     // Lấy file descriptor của map blacklist_subnets_map
@@ -96,7 +154,7 @@ int main(int argc, char **argv) {
     if (map_fd_blacklist_subnets < 0) {
         fprintf(stderr, "Failed to get blacklist_subnets_map FD\n");
         err = -1;
-        goto cleanup;
+        goto cleanup_early;
     }
 
     // Lấy file descriptor của map update_signal_map
@@ -104,7 +162,36 @@ int main(int argc, char **argv) {
     if (map_fd_update_signal < 0) {
         fprintf(stderr, "Failed to get update_signal_map FD\n");
         err = -1;
-        goto cleanup;
+        goto cleanup_early;
+    }
+    
+    // Get file descriptors for statistics maps
+    map_fd_ip_stats = bpf_map__fd(skel->maps.ip_stats_map);
+    if (map_fd_ip_stats < 0) {
+        fprintf(stderr, "Failed to get ip_stats_map FD\n");
+        err = -1;
+        goto cleanup_early;
+    }
+    
+    map_fd_global_stats = bpf_map__fd(skel->maps.global_stats_map);
+    if (map_fd_global_stats < 0) {
+        fprintf(stderr, "Failed to get global_stats_map FD\n");
+        err = -1;
+        goto cleanup_early;
+    }
+    
+    // Initialize global counters to zero
+    {
+        __u32 key = 0;  // dropped counter
+        __u64 value = 0;
+        if (bpf_map_update_elem(map_fd_global_stats, &key, &value, BPF_ANY) != 0) {
+            perror("Failed to initialize dropped packets counter");
+        }
+        
+        key = 1;  // passed counter
+        if (bpf_map_update_elem(map_fd_global_stats, &key, &value, BPF_ANY) != 0) {
+            perror("Failed to initialize passed packets counter");
+        }
     }
 
     // Initialize the subnet blacklist module
@@ -115,19 +202,19 @@ int main(int argc, char **argv) {
     // Đọc cấu hình lần đầu và attach XDP
     if (update_blacklist_from_config() != 0) {
         err = -1;
-        goto cleanup;
+        goto cleanup_early;
     }
 
     if (!filter_interface_name || current_ifindex == 0) {
         fprintf(stderr, "Failed to determine interface from config on initial load.\n");
         err = -1;
-        goto cleanup;
+        goto cleanup_early;
     }
 
     link = bpf_program__attach_xdp(skel->progs.xdp_filter, current_ifindex);
     if (!link) {
         fprintf(stderr, "Failed to attach XDP program to ifindex %d\n", current_ifindex);
-        goto cleanup;
+        goto cleanup_early;
     }    
 
     printf("Successfully loaded and attached BPF program on interface %s (index %u).\n", filter_interface_name, current_ifindex);
@@ -141,7 +228,7 @@ int main(int argc, char **argv) {
     if (inotify_fd < 0) {
         perror("inotify_init");
         err = -1;
-        goto cleanup;
+        goto cleanup_early;
     }
 
     watch_descriptor = inotify_add_watch(inotify_fd, config_file_path_abs, IN_MODIFY | IN_ATTRIB | IN_CLOSE_WRITE | IN_DELETE_SELF | IN_MOVE_SELF);
@@ -207,6 +294,9 @@ int main(int argc, char **argv) {
         }
     }
 
+    // Print statistics when program exits
+    print_statistics();
+
 cleanup_inotify:
     if (inotify_fd >= 0) {
         if (watch_descriptor >= 0) {
@@ -214,11 +304,14 @@ cleanup_inotify:
         }
         close(inotify_fd);
     }
-cleanup:
+    
+cleanup_early:
     printf("Detaching BPF program and cleaning up...\n");
-    packetfilter_bpf__destroy(skel);
+    if (skel) {
+        packetfilter_bpf__destroy(skel);
+    }
     free(filter_interface_name);
     free_subnet_list(current_blacklist_subnets);
     free(config_file_path_abs); // Giải phóng bộ nhớ cho đường dẫn config tuyệt đối
-    return -err;
+    return err > 0 ? err : -err;
 }

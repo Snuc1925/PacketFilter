@@ -3,3 +3,5 @@ sudo ip netns exec attacker-ns ab -n 100 -c 4 http://192.168.100.1/
 
 sudo systemctl stop nginx
 sudo systemctl restart nginx
+
+sudo -E ip netns exec attacker-ns python3 http_flood.py 
