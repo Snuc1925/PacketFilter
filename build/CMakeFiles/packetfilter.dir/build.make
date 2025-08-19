@@ -78,48 +78,48 @@ packetfilter.bpf.o: /home/maimanh/Manh/PacketFilter/vmlinux.h/include/x86/vmlinu
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/maimanh/Manh/PacketFilter/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "[clang] Building BPF object: packetfilter"
 	/usr/bin/clang -g -O2 -target bpf -D__TARGET_ARCH_x86 -idirafter /usr/lib/llvm-14/lib/clang/14.0.0/include -idirafter /usr/local/include -idirafter /usr/include/x86_64-linux-gnu -idirafter /usr/include -I/home/maimanh/Manh/PacketFilter/src/../vmlinux.h/include/x86 -isystem /home/maimanh/Manh/PacketFilter/build/libbpf -c /home/maimanh/Manh/PacketFilter/src/packetfilter.bpf.c -o /home/maimanh/Manh/PacketFilter/build/packetfilter.bpf.o
 
-CMakeFiles/packetfilter.dir/packetfilter.c.o: CMakeFiles/packetfilter.dir/flags.make
-CMakeFiles/packetfilter.dir/packetfilter.c.o: /home/maimanh/Manh/PacketFilter/src/packetfilter.c
-CMakeFiles/packetfilter.dir/packetfilter.c.o: CMakeFiles/packetfilter.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/maimanh/Manh/PacketFilter/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/packetfilter.dir/packetfilter.c.o"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/packetfilter.dir/packetfilter.c.o -MF CMakeFiles/packetfilter.dir/packetfilter.c.o.d -o CMakeFiles/packetfilter.dir/packetfilter.c.o -c /home/maimanh/Manh/PacketFilter/src/packetfilter.c
+CMakeFiles/packetfilter.dir/packetfilter.cpp.o: CMakeFiles/packetfilter.dir/flags.make
+CMakeFiles/packetfilter.dir/packetfilter.cpp.o: /home/maimanh/Manh/PacketFilter/src/packetfilter.cpp
+CMakeFiles/packetfilter.dir/packetfilter.cpp.o: CMakeFiles/packetfilter.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/maimanh/Manh/PacketFilter/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/packetfilter.dir/packetfilter.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/packetfilter.dir/packetfilter.cpp.o -MF CMakeFiles/packetfilter.dir/packetfilter.cpp.o.d -o CMakeFiles/packetfilter.dir/packetfilter.cpp.o -c /home/maimanh/Manh/PacketFilter/src/packetfilter.cpp
 
-CMakeFiles/packetfilter.dir/packetfilter.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/packetfilter.dir/packetfilter.c.i"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/maimanh/Manh/PacketFilter/src/packetfilter.c > CMakeFiles/packetfilter.dir/packetfilter.c.i
+CMakeFiles/packetfilter.dir/packetfilter.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/packetfilter.dir/packetfilter.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/maimanh/Manh/PacketFilter/src/packetfilter.cpp > CMakeFiles/packetfilter.dir/packetfilter.cpp.i
 
-CMakeFiles/packetfilter.dir/packetfilter.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/packetfilter.dir/packetfilter.c.s"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/maimanh/Manh/PacketFilter/src/packetfilter.c -o CMakeFiles/packetfilter.dir/packetfilter.c.s
+CMakeFiles/packetfilter.dir/packetfilter.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/packetfilter.dir/packetfilter.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/maimanh/Manh/PacketFilter/src/packetfilter.cpp -o CMakeFiles/packetfilter.dir/packetfilter.cpp.s
 
-CMakeFiles/packetfilter.dir/subnet_blacklist.c.o: CMakeFiles/packetfilter.dir/flags.make
-CMakeFiles/packetfilter.dir/subnet_blacklist.c.o: /home/maimanh/Manh/PacketFilter/src/subnet_blacklist.c
-CMakeFiles/packetfilter.dir/subnet_blacklist.c.o: CMakeFiles/packetfilter.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/maimanh/Manh/PacketFilter/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/packetfilter.dir/subnet_blacklist.c.o"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/packetfilter.dir/subnet_blacklist.c.o -MF CMakeFiles/packetfilter.dir/subnet_blacklist.c.o.d -o CMakeFiles/packetfilter.dir/subnet_blacklist.c.o -c /home/maimanh/Manh/PacketFilter/src/subnet_blacklist.c
+CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.o: CMakeFiles/packetfilter.dir/flags.make
+CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.o: /home/maimanh/Manh/PacketFilter/src/subnet_blacklist.cpp
+CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.o: CMakeFiles/packetfilter.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/maimanh/Manh/PacketFilter/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.o -MF CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.o.d -o CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.o -c /home/maimanh/Manh/PacketFilter/src/subnet_blacklist.cpp
 
-CMakeFiles/packetfilter.dir/subnet_blacklist.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/packetfilter.dir/subnet_blacklist.c.i"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/maimanh/Manh/PacketFilter/src/subnet_blacklist.c > CMakeFiles/packetfilter.dir/subnet_blacklist.c.i
+CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/maimanh/Manh/PacketFilter/src/subnet_blacklist.cpp > CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.i
 
-CMakeFiles/packetfilter.dir/subnet_blacklist.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/packetfilter.dir/subnet_blacklist.c.s"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/maimanh/Manh/PacketFilter/src/subnet_blacklist.c -o CMakeFiles/packetfilter.dir/subnet_blacklist.c.s
+CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/maimanh/Manh/PacketFilter/src/subnet_blacklist.cpp -o CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.s
 
 # Object files for target packetfilter
 packetfilter_OBJECTS = \
-"CMakeFiles/packetfilter.dir/packetfilter.c.o" \
-"CMakeFiles/packetfilter.dir/subnet_blacklist.c.o"
+"CMakeFiles/packetfilter.dir/packetfilter.cpp.o" \
+"CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.o"
 
 # External object files for target packetfilter
 packetfilter_EXTERNAL_OBJECTS =
 
-packetfilter: CMakeFiles/packetfilter.dir/packetfilter.c.o
-packetfilter: CMakeFiles/packetfilter.dir/subnet_blacklist.c.o
+packetfilter: CMakeFiles/packetfilter.dir/packetfilter.cpp.o
+packetfilter: CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.o
 packetfilter: CMakeFiles/packetfilter.dir/build.make
 packetfilter: libbpf/libbpf.a
 packetfilter: CMakeFiles/packetfilter.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/maimanh/Manh/PacketFilter/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking C executable packetfilter"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/maimanh/Manh/PacketFilter/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable packetfilter"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/packetfilter.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

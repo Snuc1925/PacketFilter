@@ -196,7 +196,9 @@ int update_blacklist_from_config(void) {
 
             if (inet_pton(AF_INET, ip_only, &addr) == 1) {
                 if (prefixlen >= 0 && prefixlen <= 32) {
-                    struct subnet_node *new_node = malloc(sizeof(struct subnet_node));
+                    struct subnet_node *new_node = static_cast<struct subnet_node*>(
+                        malloc(sizeof(struct subnet_node))
+                    );
                     if (!new_node) {
                         perror("Failed to allocate subnet_node");
                         free_subnet_list(new_subnets_list);

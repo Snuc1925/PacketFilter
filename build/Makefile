@@ -207,53 +207,53 @@ packetfilter/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/build
 .PHONY : packetfilter/fast
 
-packetfilter.o: packetfilter.c.o
+packetfilter.o: packetfilter.cpp.o
 .PHONY : packetfilter.o
 
 # target to build an object file
-packetfilter.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/packetfilter.c.o
-.PHONY : packetfilter.c.o
+packetfilter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/packetfilter.cpp.o
+.PHONY : packetfilter.cpp.o
 
-packetfilter.i: packetfilter.c.i
+packetfilter.i: packetfilter.cpp.i
 .PHONY : packetfilter.i
 
 # target to preprocess a source file
-packetfilter.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/packetfilter.c.i
-.PHONY : packetfilter.c.i
+packetfilter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/packetfilter.cpp.i
+.PHONY : packetfilter.cpp.i
 
-packetfilter.s: packetfilter.c.s
+packetfilter.s: packetfilter.cpp.s
 .PHONY : packetfilter.s
 
 # target to generate assembly for a file
-packetfilter.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/packetfilter.c.s
-.PHONY : packetfilter.c.s
+packetfilter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/packetfilter.cpp.s
+.PHONY : packetfilter.cpp.s
 
-subnet_blacklist.o: subnet_blacklist.c.o
+subnet_blacklist.o: subnet_blacklist.cpp.o
 .PHONY : subnet_blacklist.o
 
 # target to build an object file
-subnet_blacklist.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/subnet_blacklist.c.o
-.PHONY : subnet_blacklist.c.o
+subnet_blacklist.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.o
+.PHONY : subnet_blacklist.cpp.o
 
-subnet_blacklist.i: subnet_blacklist.c.i
+subnet_blacklist.i: subnet_blacklist.cpp.i
 .PHONY : subnet_blacklist.i
 
 # target to preprocess a source file
-subnet_blacklist.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/subnet_blacklist.c.i
-.PHONY : subnet_blacklist.c.i
+subnet_blacklist.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.i
+.PHONY : subnet_blacklist.cpp.i
 
-subnet_blacklist.s: subnet_blacklist.c.s
+subnet_blacklist.s: subnet_blacklist.cpp.s
 .PHONY : subnet_blacklist.s
 
 # target to generate assembly for a file
-subnet_blacklist.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/subnet_blacklist.c.s
-.PHONY : subnet_blacklist.c.s
+subnet_blacklist.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/packetfilter.dir/build.make CMakeFiles/packetfilter.dir/subnet_blacklist.cpp.s
+.PHONY : subnet_blacklist.cpp.s
 
 # Help Target
 help:

@@ -38,6 +38,7 @@ static void sig_handler(int sig) {
 
 int main(int argc, char **argv) {
     struct packetfilter_bpf *skel;
+    struct bpf_link *link;
     int err = 0;
     int inotify_fd;
     int watch_descriptor;
@@ -123,7 +124,7 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
 
-    struct bpf_link *link = bpf_program__attach_xdp(skel->progs.xdp_filter, current_ifindex);
+    link = bpf_program__attach_xdp(skel->progs.xdp_filter, current_ifindex);
     if (!link) {
         fprintf(stderr, "Failed to attach XDP program to ifindex %d\n", current_ifindex);
         goto cleanup;
