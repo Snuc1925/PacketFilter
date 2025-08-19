@@ -1,4 +1,4 @@
-# Install script for directory: /home/maimanh/PacketFilter/src
+# Install script for directory: /home/maimanh/Manh/PacketFilter/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/maimanh/PacketFilter/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/maimanh/Manh/PacketFilter/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/packetfilter.dir/packetfilter.c.o"
   "CMakeFiles/packetfilter.dir/packetfilter.c.o.d"
+  "CMakeFiles/packetfilter.dir/subnet_blacklist.c.o"
+  "CMakeFiles/packetfilter.dir/subnet_blacklist.c.o.d"
   "packetfilter"
   "packetfilter.bpf.o"
   "packetfilter.pdb"

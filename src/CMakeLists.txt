@@ -1,7 +1,27 @@
 # SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 
 cmake_minimum_required(VERSION 3.16)
-project(PacketFilter C)
+project(PacketFilter C CXX)  # Added CXX since prometheus-cpp is C++
+
+# set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+
+# --- Add prometheus-cpp as an external project ---
+include(ExternalProject)
+ExternalProject_Add(prometheus-cpp-ext
+  PREFIX prometheus-cpp
+  GIT_REPOSITORY https://github.com/jupp0r/prometheus-cpp.git
+  GIT_TAG master  # You can specify a specific tag/commit here for stability
+  CMAKE_ARGS
+    -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/prometheus-cpp
+    -DENABLE_TESTING=OFF
+    -DUSE_THIRDPARTY_LIBRARIES=ON  # Build with bundled dependencies
+    -DENABLE_PUSH=OFF  # Enable if you need push gateway support
+  STEP_TARGETS build
+)
+
+# Set up include directories and libraries for prometheus-cpp
+set(PROMETHEUS_CPP_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/prometheus-cpp/include)
+set(PROMETHEUS_CPP_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/prometheus-cpp/lib)
 
 # --- Các bước thiết lập giống hệt libbpf-bootstrap ---
 
@@ -9,7 +29,6 @@ project(PacketFilter C)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../tools/cmake)
 
 # Build libbpf đi kèm
-include(ExternalProject)
 ExternalProject_Add(libbpf
   PREFIX libbpf
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../libbpf/src
@@ -54,7 +73,6 @@ set(LIBBPF_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libbpf)
 set(LIBBPF_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf.a)
 find_package(BpfObject REQUIRED)
 
-
 # --- Phần tùy chỉnh cho dự án PacketFilter ---
 
 # 1. Tạo skeleton từ file .bpf.c
@@ -63,7 +81,21 @@ bpf_object(packetfilter packetfilter.bpf.c)
 add_dependencies(packetfilter_skel libbpf-build bpftool-build)
 
 # 2. Tạo file thực thi từ file .c
-add_executable(packetfilter packetfilter.c)
+add_executable(packetfilter 
+  packetfilter.c
+  subnet_blacklist.c
+)
+
+# Add the prometheus-cpp include directories
+target_include_directories(packetfilter PRIVATE ${PROMETHEUS_CPP_INCLUDE_DIR})
+target_link_directories(packetfilter PRIVATE ${PROMETHEUS_CPP_LIBRARY_DIR})
 
 # 3. Liên kết file thực thi với skeleton và các thư viện cần thiết
-target_link_libraries(packetfilter packetfilter_skel)
+target_link_libraries(packetfilter PRIVATE
+  packetfilter_skel
+  prometheus-cpp-core
+  prometheus-cpp-pull
+)
+
+# Make sure prometheus-cpp is built before our main target
+add_dependencies(packetfilter prometheus-cpp-ext)
