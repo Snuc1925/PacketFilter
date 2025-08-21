@@ -20,7 +20,7 @@ struct packet_stats {
     __u64 passed;   // Number of passed packets
 };
 
-// Định nghĩa map để lưu trữ blacklist subnet
+// Định ]blacklist subnet
 // Key: bpf_trie_key (chứa subnet và prefixlen)
 // Value: Một giá trị placeholder (u8), sự tồn tại của key đã đủ
 struct {

@@ -61,36 +61,71 @@ void print_statistics() {
         }
     }
     
-    // Print per-IP statistics
-    printf("\nPer-IP Statistics:\n");
-    printf("%-15s  %10s  %10s  %10s\n", "IP Address", "Dropped", "Passed", "Total");
-    printf("---------------------------------------------------\n");
-    
+    // Collect per-IP statistics
+    struct ip_entry {
+        __u32 ip;
+        struct packet_stats stats;
+    };
+    struct ip_entry entries[1024]; // tùy chỉnh nếu map lớn
+    int count = 0;
+
     __u32 ip_key = 0;
     struct packet_stats stats;
-    int count = 0;
-    
-    // Use BPF_MAP_GET_NEXT_KEY to iterate through all IP addresses in the map
+
     while (bpf_map_get_next_key(map_fd_ip_stats, count == 0 ? NULL : &ip_key, &ip_key) == 0) {
-        if (bpf_map_lookup_elem(map_fd_ip_stats, &ip_key, &stats) == 0 && (stats.dropped > 0 || stats.passed > 0)) {
-            // Convert IP to human-readable form
-            struct in_addr addr;
-            addr.s_addr = ip_key;
-            char ip_str[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &addr, ip_str, sizeof(ip_str));
-            
-            printf("%-15s  %10llu  %10llu  %10llu\n", ip_str, stats.dropped, stats.passed, 
-                stats.dropped + stats.passed);
+        if (bpf_map_lookup_elem(map_fd_ip_stats, &ip_key, &stats) == 0 &&
+            (stats.dropped > 0 || stats.passed > 0)) {
+            entries[count].ip = ip_key;
+            entries[count].stats = stats;
             count++;
         }
     }
-    
+
     if (count == 0) {
-        printf("No packet statistics recorded.\n");
+        printf("\nNo packet statistics recorded.\n");
+        return;
     }
-    
-    printf("\n------------------------------------------\n");
+
+    // Sort by dropped packets (descending)
+    qsort(entries, count, sizeof(struct ip_entry), 
+        [](const void *a, const void *b) {
+            const struct ip_entry *ia = (const struct ip_entry *)a;
+            const struct ip_entry *ib = (const struct ip_entry *)b;
+            if (ia->stats.dropped < ib->stats.dropped) return 1;
+            if (ia->stats.dropped > ib->stats.dropped) return -1;
+            return 0;
+        }
+    );
+
+    // Open file for writing
+    FILE *f = fopen("stats.txt", "w");
+    if (!f) {
+        perror("fopen");
+        return;
+    }
+
+    // Print and write results
+    fprintf(f, "%-15s  %10s  %10s  %10s\n", "IP Address", "Dropped", "Passed", "Total");
+    fprintf(f, "---------------------------------------------------\n");
+
+    for (int i = 0; i < count; i++) {
+        struct in_addr addr;
+        addr.s_addr = entries[i].ip;
+        char ip_str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &addr, ip_str, sizeof(ip_str));
+
+        fprintf(f, "%-15s  %10llu  %10llu  %10llu\n",
+            ip_str,
+            entries[i].stats.dropped,
+            entries[i].stats.passed,
+            entries[i].stats.dropped + entries[i].stats.passed);
+    }
+
+    fclose(f);
+
+    printf("Per-IP statistics written to stats.txt\n");
 }
+
 
 int main(int argc, char **argv) {
     struct packetfilter_bpf *skel = NULL;

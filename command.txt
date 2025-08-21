@@ -5,3 +5,15 @@ sudo systemctl stop nginx
 sudo systemctl restart nginx
 
 sudo -E ip netns exec attacker-ns python3 http_flood.py 
+
+# This will show all packets going to or coming from 192.168.100.1.
+sudo ip netns exec attacker-ns tcpdump -i any host 192.168.100.1 -n
+
+# This saves the captured packets to a file that you can analyze later with Wireshark.
+
+
+sudo ip netns exec attacker-ns tcpreplay -i veth-att traffic.pcap
+sudo ip netns exec attacker-ns tcpreplay --pps=100 -i veth-att traffic.pcap
+sudo ip netns exec attacker-ns tcpreplay --loop=10 -i veth-att traffic.pcap
+
+python3 packet_gen.py -n 100000 -r 0.3 -o traffic.pcap

@@ -4,8 +4,8 @@ import time
 
 # --- Configuration ---
 TARGET_URL = 'http://192.168.100.1/'
-REQUEST_COUNT = 300
-CONCURRENT_REQUESTS = 200 # How many requests to run in parallel at a time
+REQUEST_COUNT = 10000
+CONCURRENT_REQUESTS = 1 # How many requests to run in parallel at a time
 
 # --- Counters for statistics ---
 success_count = 0
@@ -18,7 +18,7 @@ async def send_request(session, url):
         # We set a short timeout. If the BPF filter drops the packet,
         # this request will fail after the timeout, which is the expected behavior.
         # The key is that asyncio won't block other requests during this wait.
-        async with session.get(url, timeout=5) as response:
+        async with session.get(url, timeout=1) as response:
             # You can optionally check the status if a response is received
             if response.status == 200:
                 success_count += 1
