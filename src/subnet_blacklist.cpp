@@ -79,7 +79,7 @@ int add_to_blacklist(int map_fd, const char *subnet_str) {
         perror("Failed to update blacklist subnet map");
         return -1;
     }
-    printf("Added %s to blacklist BPF map.\n", subnet_str);
+    // printf("Added %s to blacklist BPF map.\n", subnet_str);
     return 0;
 }
 
@@ -113,13 +113,13 @@ int update_blacklist_from_config(void) {
         return -1;
     }
 
-    char line[256];
+    char line[100000];
     char *token;
     char *saveptr;
     struct subnet_node *new_subnets_list = NULL;
     struct subnet_node *new_subnets_tail = NULL;
     char iface_name_buf[IF_NAMESIZE];
-    char subnet_list_buf[2048]; // Đủ lớn cho danh sách subnet
+    char subnet_list_buf[100000]; // Đủ lớn cho danh sách subnet
 
     bool iface_found = false;
     bool subnet_list_found = false;
@@ -140,7 +140,7 @@ int update_blacklist_from_config(void) {
             subnet_list_found = true;
             strncpy(subnet_list_buf, line + strlen("ip_blacklist="), sizeof(subnet_list_buf) - 1);
             subnet_list_buf[sizeof(subnet_list_buf) - 1] = '\0';
-            printf("Config: IP blacklist string: %s\n", subnet_list_buf);
+            // printf("Config: IP blacklist string: %s\n", subnet_list_buf);
         }
     }
     fclose(file);
@@ -169,7 +169,8 @@ int update_blacklist_from_config(void) {
         return -1;
     }
 
-    // Phân tích cú pháp chuỗi IP blacklist / subnet
+    int ip_count = 0;
+
     token = strtok_r(subnet_list_buf, ",", &saveptr);
     while (token != NULL) {
         char *trimmed_token = token;
@@ -191,7 +192,7 @@ int update_blacklist_from_config(void) {
             } else {
                 strncpy(ip_only, trimmed_token, sizeof(ip_only) - 1);
                 ip_only[sizeof(ip_only) - 1] = '\0';
-                prefixlen = 32; // Mặc định là /32 nếu không có subnet mask
+                prefixlen = 32;
             }
 
             if (inet_pton(AF_INET, ip_only, &addr) == 1) {
@@ -204,7 +205,7 @@ int update_blacklist_from_config(void) {
                         free_subnet_list(new_subnets_list);
                         return -1;
                     }
-                    new_node->key.ip = addr.s_addr; // Network byte order
+                    new_node->key.ip = addr.s_addr;
                     new_node->key.prefixlen = (__u32)prefixlen;
                     new_node->next = NULL;
                     if (new_subnets_list == NULL) {
@@ -214,6 +215,7 @@ int update_blacklist_from_config(void) {
                         new_subnets_tail->next = new_node;
                         new_subnets_tail = new_node;
                     }
+                    ip_count++;   // ✅ tăng số lượng IP
                 } else {
                     fprintf(stderr, "Warning: Invalid prefix length for '%s' in config file.\n", trimmed_token);
                 }
@@ -223,6 +225,9 @@ int update_blacklist_from_config(void) {
         }
         token = strtok_r(NULL, ",", &saveptr);
     }
+
+    printf("Total IP entries parsed: %d\n", ip_count);
+
 
     // --- Bắt đầu quá trình đồng bộ hóa blacklist ---
 

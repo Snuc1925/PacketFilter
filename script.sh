@@ -18,3 +18,18 @@ sudo ip netns exec attacker-ns ip link set veth-att up
 
 # Bật giao diện loopback bên trong namespace (quan trọng cho nhiều công cụ)
 sudo ip netns exec attacker-ns ip link set lo up
+
+
+sudo ip netns add victim-ns
+sudo ip link add veth-srv2 type veth peer name veth-vic
+sudo ip link set veth-vic netns victim-ns
+sudo ip addr add 192.168.200.1/24 dev veth-srv2
+sudo ip link set veth-srv2 up
+sudo ip netns exec victim-ns ip addr add 192.168.200.2/24 dev veth-vic
+sudo ip netns exec victim-ns ip link set veth-vic up
+sudo ip netns exec victim-ns ip link set lo up
+sudo sysctl -w net.ipv4.ip_forward=1
+sudo ip netns exec victim-ns ip route add 192.168.100.0/24 via 192.168.200.1
+sudo ip netns exec victim-ns ping 192.168.100.1
+
+

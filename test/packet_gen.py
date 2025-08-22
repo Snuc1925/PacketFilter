@@ -138,7 +138,7 @@ def main():
         parser.error("Blacklist rate must be between 0.0 and 1.0")
     
     # Initialize blacklist
-    blacklist_ip = ["192.168.100.2"]
+    blacklist_ip = ["192.168.100.3"]
     # You can add more blacklisted IPs here
     
     # Calculate number of blacklisted packets

@@ -12,8 +12,20 @@ sudo ip netns exec attacker-ns tcpdump -i any host 192.168.100.1 -n
 # This saves the captured packets to a file that you can analyze later with Wireshark.
 
 
+sudo ip netns exec attacker-ns tcpreplay -i veth-att --stats=1000 traffic.pcap
 sudo ip netns exec attacker-ns tcpreplay -i veth-att traffic.pcap
 sudo ip netns exec attacker-ns tcpreplay --pps=100 -i veth-att traffic.pcap
 sudo ip netns exec attacker-ns tcpreplay --loop=10 -i veth-att traffic.pcap
 
 python3 packet_gen.py -n 100000 -r 0.3 -o traffic.pcap
+
+
+    sudo ip netns exec attacker-ns ping -c 50 192.168.100.1
+📌 Một số option hay đi kèm:
+
+-i 0.2 → chỉnh khoảng cách giữa 2 gói (mặc định 1 giây).
+
+-s 1400 → chỉnh kích thước payload gói ICMP.
+
+-q → chế độ “quiet”, chỉ in summary sau khi ping xong.
+
