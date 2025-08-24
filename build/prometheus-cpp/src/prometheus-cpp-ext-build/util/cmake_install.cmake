@@ -1,8 +1,8 @@
-# Install script for directory: /home/maimanh/Manh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext/util
+# Install script for directory: /home/maimanh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext/util
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/maimanh/Manh/PacketFilter/build/prometheus-cpp")
+  set(CMAKE_INSTALL_PREFIX "/home/maimanh/PacketFilter/build/prometheus-cpp")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

@@ -1,4 +1,4 @@
-prefix=/home/maimanh/Manh/PacketFilter/build/prometheus-cpp
+prefix=/home/maimanh/PacketFilter/build/prometheus-cpp
 exec_prefix=${prefix}
 includedir=${prefix}/include
 libdir=${exec_prefix}/lib

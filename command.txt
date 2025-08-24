@@ -29,3 +29,5 @@ python3 packet_gen.py -n 100000 -r 0.3 -o traffic.pcap
 
 -q → chế độ “quiet”, chỉ in summary sau khi ping xong.
 
+sudo -E ip netns exec attacker-ns python3 benchmark.py -t 192.168.100.1 -p 80 -m syn_only
+sudo ip netns exec attacker-ns tcpdump -i veth-att -w capture.pcap

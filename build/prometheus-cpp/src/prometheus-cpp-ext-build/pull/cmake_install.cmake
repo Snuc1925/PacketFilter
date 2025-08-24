@@ -1,8 +1,8 @@
-# Install script for directory: /home/maimanh/Manh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext/pull
+# Install script for directory: /home/maimanh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext/pull
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/maimanh/Manh/PacketFilter/build/prometheus-cpp")
+  set(CMAKE_INSTALL_PREFIX "/home/maimanh/PacketFilter/build/prometheus-cpp")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -47,25 +47,25 @@ if(NOT DEFINED CMAKE_OBJDUMP)
   set(CMAKE_OBJDUMP "/usr/bin/objdump")
 endif()
 
-if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/prometheus" TYPE FILE FILES
-    "/home/maimanh/Manh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext/3rdparty/civetweb/include/CivetServer.h"
-    "/home/maimanh/Manh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext/3rdparty/civetweb/include/civetweb.h"
+    "/home/maimanh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext/3rdparty/civetweb/include/CivetServer.h"
+    "/home/maimanh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext/3rdparty/civetweb/include/civetweb.h"
     )
 endif()
 
-if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "/home/maimanh/Manh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext-build/lib/libprometheus-cpp-pull.a")
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "/home/maimanh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext-build/lib/libprometheus-cpp-pull.a")
 endif()
 
-if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE DIRECTORY FILES
-    "/home/maimanh/Manh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext/pull/include/"
-    "/home/maimanh/Manh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext-build/pull/include/"
+    "/home/maimanh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext/pull/include/"
+    "/home/maimanh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext-build/pull/include/"
     )
 endif()
 
-if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/maimanh/Manh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext-build/pull/prometheus-cpp-pull.pc")
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/maimanh/PacketFilter/build/prometheus-cpp/src/prometheus-cpp-ext-build/pull/prometheus-cpp-pull.pc")
 endif()
 
