@@ -1,0 +1,35 @@
+# đi qua nginx
+maimanh@maimanh:~/Manh/PacketFilter$ sudo ip netns exec attacker-ns wrk -t1 -c1 -d10s http://192.168.100.1/
+Running 10s test @ http://192.168.100.1/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.49ms    1.07ms  26.49ms   92.24%
+    Req/Sec   715.91     94.23     0.85k    78.00%
+  7130 requests in 10.01s, 1.41MB read
+Requests/sec:    712.42
+Transfer/sec:    144.68KB
+
+# đi thẳng tới backend
+maimanh@maimanh:~/Manh/PacketFilter$ sudo ip netns exec attacker-ns wrk -t1 -c1 -d10s http://192.168.100.1:5000/
+Running 10s test @ http://192.168.100.1:5000/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.30ms  716.20us   8.64ms   88.91%
+    Req/Sec   745.39    106.24     0.99k    74.00%
+  7429 requests in 10.02s, 1.49MB read
+Requests/sec:    741.74
+Transfer/sec:    152.84KB
+
+# chặn với nginx 
+attack: sudo ip netns exec attacker-ns wrk -t4 -c100 -d20s http://192.168.100.1/
+
+maimanh@maimanh:~/Manh/PacketFilter$ sudo ip netns exec victim-ns wrk -t1 -c1 -d10s http://192.168.100.1/
+Running 10s test @ http://192.168.100.1/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.97ms    3.19ms  23.55ms   72.56%
+    Req/Sec   172.42     45.38   313.00     67.00%
+  1720 requests in 10.02s, 349.29KB read
+Requests/sec:    171.68
+Transfer/sec:     34.86KB
+

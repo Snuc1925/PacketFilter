@@ -102,7 +102,7 @@ def generate_dns_packet(src_ip, dst_ip="192.168.100.1"):
     return (Ether() / 
             IP(src=src_ip, dst=dst_ip) / 
             UDP(sport=random.randint(1024, 65535), dport=53) / 
-            DNS(rd=1, qd=DNSQR(qname=domain)))
+            DNS(rd=1, qd=DNSQR(qname=domain))) 
 
 def generate_icmp_packet(src_ip, dst_ip="192.168.100.1"):
     """Generate an ICMP packet"""

@@ -2,28 +2,28 @@
 	"sources" : 
 	[
 		{
-			"file" : "/home/maimanh/PacketFilter/build/CMakeFiles/bpftool-build"
+			"file" : "/home/maimanh/Manh/PacketFilter/build/CMakeFiles/bpftool-build"
 		},
 		{
-			"file" : "/home/maimanh/PacketFilter/build/CMakeFiles/bpftool-build.rule"
+			"file" : "/home/maimanh/Manh/PacketFilter/build/CMakeFiles/bpftool-build.rule"
 		},
 		{
-			"file" : "/home/maimanh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-build.rule"
+			"file" : "/home/maimanh/Manh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-build.rule"
 		},
 		{
-			"file" : "/home/maimanh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-configure.rule"
+			"file" : "/home/maimanh/Manh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-configure.rule"
 		},
 		{
-			"file" : "/home/maimanh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-patch.rule"
+			"file" : "/home/maimanh/Manh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-patch.rule"
 		},
 		{
-			"file" : "/home/maimanh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-update.rule"
+			"file" : "/home/maimanh/Manh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-update.rule"
 		},
 		{
-			"file" : "/home/maimanh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-download.rule"
+			"file" : "/home/maimanh/Manh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-download.rule"
 		},
 		{
-			"file" : "/home/maimanh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-mkdir.rule"
+			"file" : "/home/maimanh/Manh/PacketFilter/build/bpftool/src/bpftool-stamp/bpftool-mkdir.rule"
 		}
 	],
 	"target" : 

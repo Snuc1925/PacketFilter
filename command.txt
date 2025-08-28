@@ -31,3 +31,6 @@ python3 packet_gen.py -n 100000 -r 0.3 -o traffic.pcap
 
 sudo -E ip netns exec attacker-ns python3 benchmark.py -t 192.168.100.1 -p 80 -m syn_only
 sudo ip netns exec attacker-ns tcpdump -i veth-att -w capture.pcap
+
+sudo ip netns exec victim-ns tcpdump -i veth-vic src host 192.168.200.2 -w capture_victim.pcap
+
