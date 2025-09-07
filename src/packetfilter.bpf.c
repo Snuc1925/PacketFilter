@@ -70,7 +70,7 @@ int xdp_filter(struct xdp_md *ctx) {
     struct ethhdr *eth = data;
 
     if ((void *)(eth + 1) > data_end) {
-        return XDP_PASS;
+        return XDP_PASS;   
     }
 
     if (eth->h_proto != bpf_htons(ETH_P_IP)) {

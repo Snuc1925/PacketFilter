@@ -1,3 +1,0 @@
-repository='https://github.com/jupp0r/prometheus-cpp.git'
-module=''
-tag='origin'

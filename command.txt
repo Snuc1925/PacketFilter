@@ -34,3 +34,25 @@ sudo ip netns exec attacker-ns tcpdump -i veth-att -w capture.pcap
 
 sudo ip netns exec victim-ns tcpdump -i veth-vic src host 192.168.200.2 -w capture_victim.pcap
 
+sudo ip netns exec victim-ns ./src/h2load --h1 -c 5 -t 1 -D 20s http://192.168.100.1/
+sudo ip netns exec attacker-ns ./src/h2load --h1 -c 100 -t 1 -D 30s http://192.168.100.1/
+
+sudo truncate -s 0 /var/log/nginx/error.log
+sudo truncate -s 0 /var/log/nginx/access.log
+
+
+sudo apt install python3-venv -y
+
+# tạo venv riêng
+python3 -m venv venv
+
+# kích hoạt venv
+source venv/bin/activate
+
+# cài lib trong venv
+pip install pandas matplotlib
+
+# chạy script
+python3 your_script.py
+
+sudo taskset -c 3 timeout 30s ip netns exec attacker-ns hping3 -S -p 80 --flood 192.168.100.1

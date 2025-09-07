@@ -1,1 +1,0 @@
-cmd='/usr/bin/cmake;-DCMAKE_INSTALL_PREFIX=/home/maimanh/Manh/PacketFilter/build/prometheus-cpp;-DENABLE_TESTING=OFF;-DUSE_THIRDPARTY_LIBRARIES=ON;-DENABLE_PUSH=OFF;-GUnix Makefiles;<SOURCE_DIR><SOURCE_SUBDIR>'
