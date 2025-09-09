@@ -3,7 +3,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(PacketFilter C CXX)  # Added CXX since prometheus-cpp is C++
 
-# set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # --- Add prometheus-cpp as an external project ---
 include(ExternalProject)
