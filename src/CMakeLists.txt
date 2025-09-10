@@ -82,10 +82,10 @@ bpf_object(packetfilter packetfilter.bpf.c)
 # Đảm bảo skeleton được build sau khi libbpf và bpftool được build
 add_dependencies(packetfilter_skel libbpf-build bpftool-build)
 
-# 2. Tạo file thực thi từ file .c
+# 2. Tạo file thực thi từ file .cpp
 add_executable(packetfilter 
   packetfilter.cpp
-  subnet_blacklist.cpp
+  packet_filter.cpp
 )
 
 # Add the prometheus-cpp include directories

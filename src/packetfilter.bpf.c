@@ -20,7 +20,18 @@ struct packet_stats {
     __u64 passed;   // Number of passed packets
 };
 
-// Định ]blacklist subnet
+// Rate limiting structure - stores configuration for rate-limited IPs
+struct ip_rate_limit {
+    __u32 packets_per_second; // Maximum packets per second allowed
+    __u64 packet_interval_ns; // Minimum interval between packets in nanoseconds
+};
+
+// Packet timestamp tracking structure
+struct packet_timestamp {
+    __u64 last_timestamp; // Last packet timestamp in nanoseconds
+};
+
+// Định blacklist subnet
 // Key: bpf_trie_key (chứa subnet và prefixlen)
 // Value: Một giá trị placeholder (u8), sự tồn tại của key đã đủ
 struct {
@@ -39,7 +50,7 @@ struct {
     __type(value, __u64); // Sử dụng timestamp hoặc counter để báo hiệu cập nhật
 } update_signal_map SEC(".maps");
 
-// New map for tracking packet statistics per IP address
+// Map for tracking packet statistics per IP address
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES); // Maximum number of tracked IPs
@@ -54,6 +65,22 @@ struct {
     __type(key, __u32);
     __type(value, __u64);
 } global_stats_map SEC(".maps");
+
+// New map for rate limiting configuration
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_ENTRIES);  // Maximum number of rate-limited IPs
+    __type(key, __u32);                // IP address as key
+    __type(value, struct ip_rate_limit); // Rate limit configuration as value
+} ip_rate_limits_map SEC(".maps");
+
+// New map for tracking packet timestamps (for rate limiting)
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_ENTRIES);  // Maximum number of tracked IPs
+    __type(key, __u32);                // IP address as key
+    __type(value, struct packet_timestamp); // Timestamp tracking as value
+} ip_timestamps_map SEC(".maps");
 
 SEC("xdp")
 int xdp_filter(struct xdp_md *ctx) {
@@ -101,6 +128,44 @@ int xdp_filter(struct xdp_md *ctx) {
         if (!ip_stats) {
             // This should not happen, but just in case
             goto process_packet;
+        }
+    }
+
+    // Rate limiting check - only if this IP has a rate limit configured
+    struct ip_rate_limit *rate_limit = bpf_map_lookup_elem(&ip_rate_limits_map, &src_ip);
+    if (rate_limit) {
+        // Get current timestamp
+        __u64 current_time = bpf_ktime_get_ns();
+        
+        // Lookup or initialize timestamp tracking for this IP
+        struct packet_timestamp new_timestamp = {0};
+        struct packet_timestamp *timestamp = bpf_map_lookup_elem(&ip_timestamps_map, &src_ip);
+        if (!timestamp) {
+            new_timestamp.last_timestamp = current_time;
+            bpf_map_update_elem(&ip_timestamps_map, &src_ip, &new_timestamp, BPF_ANY);
+        } else {
+            // Check if packet arrived too soon
+            if (current_time - timestamp->last_timestamp < rate_limit->packet_interval_ns) {
+                // Packet arrived too soon - rate limit exceeded
+                bpf_printk("XDP: Rate limit exceeded for IP: %pI4, dropping packet\n", &src_ip);
+                
+                // Update IP-specific statistics
+                if (ip_stats) {
+                    __sync_fetch_and_add(&ip_stats->dropped, 1);
+                }
+                
+                // Update global dropped counter
+                __u32 dropped_key = 0;
+                __u64 *dropped_count = bpf_map_lookup_elem(&global_stats_map, &dropped_key);
+                if (dropped_count) {
+                    __sync_fetch_and_add(dropped_count, 1);
+                }
+                
+                return XDP_DROP;
+            }
+            
+            // Update the timestamp for the next packet
+            timestamp->last_timestamp = current_time;
         }
     }
 

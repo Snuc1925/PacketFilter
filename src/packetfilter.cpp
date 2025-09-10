@@ -21,8 +21,8 @@
 #include <fstream>
 #include <iomanip>
 
-// Include the subnet blacklist header
-#include "subnet_blacklist.h"
+// Include the packet filter header
+#include "packet_filter.h"
 
 // Define event buffer size for inotify
 #define EVENT_SIZE (sizeof(struct inotify_event) + NAME_MAX + 1)
@@ -43,10 +43,13 @@ namespace {
     int map_fd_update_signal;     // File descriptor của update signal map
     int map_fd_ip_stats;          // File descriptor for IP statistics map
     int map_fd_global_stats;      // File descriptor for global statistics map
+    int map_fd_rate_limits;       // File descriptor for rate limits map
+    int map_fd_ip_timestamps;     // File descriptor for IP timestamps map
     std::string config_file_path_abs; // Đường dẫn tuyệt đối tới file config
     std::string filter_interface_name; // Tên interface
     uint32_t current_ifindex; // ifindex của interface
-    subnet_blacklist::SubnetNode* current_blacklist_subnets = nullptr; // Linked list of current subnets
+    packet_filter::SubnetNode* current_blacklist_subnets = nullptr; // Linked list of current subnets
+    packet_filter::RateLimitNode* current_rate_limits = nullptr;   // Linked list of current rate limits
 
     void sig_handler(int sig) {
         exiting = true;
@@ -205,6 +208,21 @@ int main(int argc, char **argv) {
         goto cleanup_early;
     }
     
+    // Get file descriptors for rate limiting maps
+    map_fd_rate_limits = bpf_map__fd(skel->maps.ip_rate_limits_map);
+    if (map_fd_rate_limits < 0) {
+        std::cerr << "Failed to get ip_rate_limits_map FD" << std::endl;
+        err = -1;
+        goto cleanup_early;
+    }
+    
+    map_fd_ip_timestamps = bpf_map__fd(skel->maps.ip_timestamps_map);
+    if (map_fd_ip_timestamps < 0) {
+        std::cerr << "Failed to get ip_timestamps_map FD" << std::endl;
+        err = -1;
+        goto cleanup_early;
+    }
+    
     // Initialize global counters to zero
     {
         __u32 key = 0;  // dropped counter
@@ -219,13 +237,13 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Initialize the subnet blacklist module
-    subnet_blacklist::init(map_fd_blacklist_subnets, map_fd_update_signal, 
-                         config_file_path_abs, filter_interface_name, 
-                         current_ifindex, &current_blacklist_subnets);
+    // Initialize the packet filter module
+    packet_filter::init(map_fd_blacklist_subnets, map_fd_update_signal, map_fd_rate_limits,
+                       config_file_path_abs, filter_interface_name, 
+                       current_ifindex, &current_blacklist_subnets, &current_rate_limits);
 
     // Đọc cấu hình lần đầu và attach XDP
-    if (subnet_blacklist::update_from_config() != 0) {
+    if (packet_filter::update_from_config() != 0) {
         err = -1;
         goto cleanup_early;
     }
@@ -311,9 +329,9 @@ int main(int argc, char **argv) {
                             break;
                         }
                     } else if (event->mask & (IN_MODIFY | IN_CLOSE_WRITE)) {
-                        std::cout << "Config file '" << config_file_path_abs << "' modified or written. Updating blacklist..." << std::endl;
-                        if (subnet_blacklist::update_from_config() != 0) {
-                            std::cerr << "Failed to update blacklist from config. Continuing..." << std::endl;
+                        std::cout << "Config file '" << config_file_path_abs << "' modified or written. Updating configuration..." << std::endl;
+                        if (packet_filter::update_from_config() != 0) {
+                            std::cerr << "Failed to update configuration from config. Continuing..." << std::endl;
                         }
                     }
                     p += EVENT_SIZE + event->len;
@@ -337,7 +355,8 @@ cleanup_early:
     std::cout << "Detaching BPF program and cleaning up..." << std::endl;
     
     // The smart pointers will handle cleanup of skel and link
-    subnet_blacklist::free_subnet_list(current_blacklist_subnets);
+    packet_filter::free_subnet_list(current_blacklist_subnets);
+    packet_filter::free_rate_limit_list(current_rate_limits);
     
     return err > 0 ? err : -err;
 }
