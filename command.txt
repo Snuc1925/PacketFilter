@@ -59,3 +59,4 @@ sudo taskset -c 3 timeout 30s ip netns exec attacker-ns hping3 -S -p 80 --flood 
 
 
 pidstat -p $(pgrep -o -P $(pgrep -o nginx)) 1  > cpu_usage.log
+ln -s /var/log/nginx/access.log ~/Manh/PacketFilter/monitor/access.log
