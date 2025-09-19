@@ -1,0 +1,36 @@
+2025-09-19 14:26:49,353 INFO o.a.j.u.JMeterUtils: Setting Locale to en_EN
+2025-09-19 14:26:49,374 INFO o.a.j.JMeter: Loading user properties from: user.properties
+2025-09-19 14:26:49,374 INFO o.a.j.JMeter: Loading system properties from: system.properties
+2025-09-19 14:26:49,379 INFO o.a.j.JMeter: Copyright (c) 1998-2024 The Apache Software Foundation
+2025-09-19 14:26:49,379 INFO o.a.j.JMeter: Version 5.6.3
+2025-09-19 14:26:49,379 INFO o.a.j.JMeter: java.version=11.0.28
+2025-09-19 14:26:49,379 INFO o.a.j.JMeter: java.vm.name=OpenJDK 64-Bit Server VM
+2025-09-19 14:26:49,380 INFO o.a.j.JMeter: os.name=Linux
+2025-09-19 14:26:49,380 INFO o.a.j.JMeter: os.arch=amd64
+2025-09-19 14:26:49,380 INFO o.a.j.JMeter: os.version=6.8.0-79-generic
+2025-09-19 14:26:49,380 INFO o.a.j.JMeter: file.encoding=UTF-8
+2025-09-19 14:26:49,380 INFO o.a.j.JMeter: java.awt.headless=null
+2025-09-19 14:26:49,380 INFO o.a.j.JMeter: Max memory     =1073741824
+2025-09-19 14:26:49,380 INFO o.a.j.JMeter: Available Processors =4
+2025-09-19 14:26:49,388 INFO o.a.j.JMeter: Default Locale=English (EN)
+2025-09-19 14:26:49,389 INFO o.a.j.JMeter: JMeter  Locale=English (EN)
+2025-09-19 14:26:49,389 INFO o.a.j.JMeter: JMeterHome=/home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3
+2025-09-19 14:26:49,389 INFO o.a.j.JMeter: user.dir  =/home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3/bin
+2025-09-19 14:26:49,389 INFO o.a.j.JMeter: PWD       =/home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3/bin
+2025-09-19 14:26:49,389 INFO o.a.j.JMeter: IP: 127.0.1.1 Name: maimanh FullName: maimanh
+2025-09-19 14:26:49,405 INFO o.a.j.JMeter: Loaded icon properties from org/apache/jmeter/images/icon.properties
+2025-09-19 14:26:49,714 INFO o.a.j.JMeterGuiLauncher: Setting LAF to: com.github.weisj.darklaf.DarkLaf:com.github.weisj.darklaf.theme.DarculaTheme
+2025-09-19 14:27:03,644 INFO o.a.j.s.FileServer: Default base='/home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3/bin'
+2025-09-19 14:27:03,655 INFO o.a.j.g.a.Load: Loading file: /home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3/test.jmx
+2025-09-19 14:27:03,656 INFO o.a.j.s.FileServer: Set new base='/home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3'
+2025-09-19 14:27:03,923 INFO o.a.j.s.SaveService: Testplan (JMX) version: 2.2. Testlog (JTL) version: 2.2
+2025-09-19 14:27:03,941 INFO o.a.j.s.SaveService: Using SaveService properties version 5.0
+2025-09-19 14:27:03,943 INFO o.a.j.s.SaveService: Using SaveService properties file encoding UTF-8
+2025-09-19 14:27:03,944 INFO o.a.j.s.SaveService: Loading file: /home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3/test.jmx
+2025-09-19 14:27:03,971 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/html is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-19 14:27:03,971 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xhtml+xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-19 14:27:03,971 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-19 14:27:03,971 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-19 14:27:03,971 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/vnd.wap.wml is org.apache.jmeter.protocol.http.parser.RegexpHTMLParser
+2025-09-19 14:27:03,971 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/css is org.apache.jmeter.protocol.http.parser.CssParser
+2025-09-19 14:27:04,220 INFO o.a.j.s.FileServer: Set new base='/home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3'

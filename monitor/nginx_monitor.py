@@ -53,7 +53,7 @@ class Benchmark:
     def stop_nginx(self):
         """Stop Nginx server"""
         print("Stopping Nginx...")
-        subprocess.run(["sudo", "nginx", "-s", "stop"])
+        # subprocess.run(["sudo", "nginx", "-s", "stop"])
         
     def start_monitor_cpu(self):
         """Monitor Nginx worker CPU usage"""
@@ -83,12 +83,12 @@ class Benchmark:
         print("Starting JMeter test...")
         
         # Generate results file name with timestamp
-        results_file = f"results_{int(time.time())}.jtl"
+        results_file = f"results.jtl"
         
         jmeter_cmd = [
             "sudo", "ip", "netns", "exec", "victim-ns",
             self.jmeter_path, "-n", "-t", self.test_jmx_path,
-            "-l", results_file
+            "-l", results_file, "-f"   # -f để ghi đè file cũ
         ]
         
         try:
@@ -473,7 +473,7 @@ class Benchmark:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Nginx performance monitoring tool')
-    parser.add_argument('--duration', type=int, default=30,
+    parser.add_argument('--duration', type=int, default=5,
                         help='Duration of the test in seconds')
     
     args = parser.parse_args()
