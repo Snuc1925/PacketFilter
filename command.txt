@@ -56,3 +56,6 @@ pip install pandas matplotlib
 python3 your_script.py
 
 sudo taskset -c 3 timeout 30s ip netns exec attacker-ns hping3 -S -p 80 --flood 192.168.100.1
+
+
+pidstat -p $(pgrep -o -P $(pgrep -o nginx)) 1  > cpu_usage.log
