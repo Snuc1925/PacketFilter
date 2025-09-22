@@ -1,60 +1,59 @@
-2025-09-19 16:28:16,995 INFO o.a.j.u.JMeterUtils: Setting Locale to en_EN
-2025-09-19 16:28:17,022 INFO o.a.j.JMeter: Loading user properties from: /home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3/bin/user.properties
-2025-09-19 16:28:17,023 INFO o.a.j.JMeter: Loading system properties from: /home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3/bin/system.properties
-2025-09-19 16:28:17,030 INFO o.a.j.JMeter: Copyright (c) 1998-2024 The Apache Software Foundation
-2025-09-19 16:28:17,030 INFO o.a.j.JMeter: Version 5.6.3
-2025-09-19 16:28:17,030 INFO o.a.j.JMeter: java.version=11.0.28
-2025-09-19 16:28:17,030 INFO o.a.j.JMeter: java.vm.name=OpenJDK 64-Bit Server VM
-2025-09-19 16:28:17,031 INFO o.a.j.JMeter: os.name=Linux
-2025-09-19 16:28:17,031 INFO o.a.j.JMeter: os.arch=amd64
-2025-09-19 16:28:17,031 INFO o.a.j.JMeter: os.version=6.8.0-79-generic
-2025-09-19 16:28:17,031 INFO o.a.j.JMeter: file.encoding=UTF-8
-2025-09-19 16:28:17,031 INFO o.a.j.JMeter: java.awt.headless=true
-2025-09-19 16:28:17,031 INFO o.a.j.JMeter: Max memory     =1073741824
-2025-09-19 16:28:17,031 INFO o.a.j.JMeter: Available Processors =4
-2025-09-19 16:28:17,045 INFO o.a.j.JMeter: Default Locale=English (EN)
-2025-09-19 16:28:17,046 INFO o.a.j.JMeter: JMeter  Locale=English (EN)
-2025-09-19 16:28:17,046 INFO o.a.j.JMeter: JMeterHome=/home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3
-2025-09-19 16:28:17,046 INFO o.a.j.JMeter: user.dir  =/home/maimanh/Manh/PacketFilter/monitor
-2025-09-19 16:28:17,046 INFO o.a.j.JMeter: PWD       =/home/maimanh/Manh/PacketFilter/monitor
-2025-09-19 16:28:17,046 INFO o.a.j.JMeter: IP: 127.0.1.1 Name: maimanh FullName: maimanh
-2025-09-19 16:28:17,068 INFO o.a.j.s.FileServer: Default base='/home/maimanh/Manh/PacketFilter/monitor'
-2025-09-19 16:28:17,071 INFO o.a.j.s.FileServer: Set new base='/home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3'
-2025-09-19 16:28:17,306 INFO o.a.j.s.SaveService: Testplan (JMX) version: 2.2. Testlog (JTL) version: 2.2
-2025-09-19 16:28:17,342 INFO o.a.j.s.SaveService: Using SaveService properties version 5.0
-2025-09-19 16:28:17,348 INFO o.a.j.s.SaveService: Using SaveService properties file encoding UTF-8
-2025-09-19 16:28:17,354 INFO o.a.j.s.SaveService: Loading file: /home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3/test.jmx
-2025-09-19 16:28:17,433 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/html is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
-2025-09-19 16:28:17,434 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xhtml+xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
-2025-09-19 16:28:17,434 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
-2025-09-19 16:28:17,434 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
-2025-09-19 16:28:17,434 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/vnd.wap.wml is org.apache.jmeter.protocol.http.parser.RegexpHTMLParser
-2025-09-19 16:28:17,434 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/css is org.apache.jmeter.protocol.http.parser.CssParser
-2025-09-19 16:28:17,474 INFO o.a.j.JMeter: Creating summariser <summary>
-2025-09-19 16:28:17,508 INFO o.a.j.e.StandardJMeterEngine: Running the test!
-2025-09-19 16:28:17,509 INFO o.a.j.s.SampleEvent: List of sample_variables: []
-2025-09-19 16:28:17,510 INFO o.a.j.s.SampleEvent: List of sample_variables: []
-2025-09-19 16:28:17,528 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must contain the string: '.functions.'
-2025-09-19 16:28:17,528 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must not contain the string: '.gui.'
-2025-09-19 16:28:18,044 INFO o.a.j.JMeter: Running test (1758274098043)
-2025-09-19 16:28:18,070 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : Thread Group
-2025-09-19 16:28:18,070 INFO o.a.j.e.StandardJMeterEngine: Starting 1 threads for group Thread Group.
-2025-09-19 16:28:18,071 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
-2025-09-19 16:28:18,071 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=1 ramp-up=0 delayedStart=false
-2025-09-19 16:28:18,078 INFO o.a.j.t.ThreadGroup: Started thread group number 1
-2025-09-19 16:28:18,079 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
-2025-09-19 16:28:18,084 INFO o.a.j.t.JMeterThread: Thread started: Thread Group 1-1
-2025-09-19 16:28:18,126 INFO o.a.j.p.h.s.HTTPHCAbstractImpl: Local host = maimanh
-2025-09-19 16:28:18,134 INFO o.a.j.p.h.s.HTTPHC4Impl: HTTP request retry count = 0
-2025-09-19 16:28:18,137 INFO o.a.j.s.SampleResult: Note: Sample TimeStamps are START times
-2025-09-19 16:28:18,137 INFO o.a.j.s.SampleResult: sampleresult.default.encoding is set to UTF-8
-2025-09-19 16:28:18,137 INFO o.a.j.s.SampleResult: sampleresult.useNanoTime=true
-2025-09-19 16:28:18,137 INFO o.a.j.s.SampleResult: sampleresult.nanoThreadSleep=5000
-2025-09-19 16:28:30,001 INFO o.a.j.r.Summariser: summary +  67930 in 00:00:12 = 5681.2/s Avg:     0 Min:     0 Max:    90 Err:     0 (0.00%) Active: 1 Started: 1 Finished: 0
-2025-09-19 16:29:00,000 INFO o.a.j.r.Summariser: summary + 213820 in 00:00:30 = 7127.3/s Avg:     0 Min:     0 Max:    32 Err:     0 (0.00%) Active: 1 Started: 1 Finished: 0
-2025-09-19 16:29:00,001 INFO o.a.j.r.Summariser: summary = 281750 in 00:00:42 = 6715.2/s Avg:     0 Min:     0 Max:    90 Err:     0 (0.00%)
-2025-09-19 16:29:18,071 INFO o.a.j.t.JMeterThread: Stopping because end time detected by thread: Thread Group 1-1
-2025-09-19 16:29:18,071 INFO o.a.j.t.JMeterThread: Thread finished: Thread Group 1-1
-2025-09-19 16:29:18,075 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
-2025-09-19 16:29:18,076 INFO o.a.j.r.Summariser: summary + 128681 in 00:00:18 = 7119.3/s Avg:     0 Min:     0 Max:    10 Err:     0 (0.00%) Active: 0 Started: 1 Finished: 1
-2025-09-19 16:29:18,076 INFO o.a.j.r.Summariser: summary = 410431 in 00:01:00 = 6836.8/s Avg:     0 Min:     0 Max:    90 Err:     0 (0.00%)
+2025-09-22 14:08:19,598 INFO o.a.j.u.JMeterUtils: Setting Locale to en_EN
+2025-09-22 14:08:19,631 INFO o.a.j.JMeter: Loading user properties from: /home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3/bin/user.properties
+2025-09-22 14:08:19,632 INFO o.a.j.JMeter: Loading system properties from: /home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3/bin/system.properties
+2025-09-22 14:08:19,639 INFO o.a.j.JMeter: Copyright (c) 1998-2024 The Apache Software Foundation
+2025-09-22 14:08:19,639 INFO o.a.j.JMeter: Version 5.6.3
+2025-09-22 14:08:19,639 INFO o.a.j.JMeter: java.version=11.0.28
+2025-09-22 14:08:19,639 INFO o.a.j.JMeter: java.vm.name=OpenJDK 64-Bit Server VM
+2025-09-22 14:08:19,639 INFO o.a.j.JMeter: os.name=Linux
+2025-09-22 14:08:19,639 INFO o.a.j.JMeter: os.arch=amd64
+2025-09-22 14:08:19,639 INFO o.a.j.JMeter: os.version=6.8.0-83-generic
+2025-09-22 14:08:19,640 INFO o.a.j.JMeter: file.encoding=UTF-8
+2025-09-22 14:08:19,640 INFO o.a.j.JMeter: java.awt.headless=true
+2025-09-22 14:08:19,640 INFO o.a.j.JMeter: Max memory     =1073741824
+2025-09-22 14:08:19,640 INFO o.a.j.JMeter: Available Processors =4
+2025-09-22 14:08:19,652 INFO o.a.j.JMeter: Default Locale=English (EN)
+2025-09-22 14:08:19,653 INFO o.a.j.JMeter: JMeter  Locale=English (EN)
+2025-09-22 14:08:19,653 INFO o.a.j.JMeter: JMeterHome=/home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3
+2025-09-22 14:08:19,653 INFO o.a.j.JMeter: user.dir  =/home/maimanh/Manh/PacketFilter/monitor
+2025-09-22 14:08:19,653 INFO o.a.j.JMeter: PWD       =/home/maimanh/Manh/PacketFilter/monitor
+2025-09-22 14:08:19,654 INFO o.a.j.JMeter: IP: 127.0.1.1 Name: maimanh FullName: maimanh
+2025-09-22 14:08:19,675 INFO o.a.j.s.FileServer: Default base='/home/maimanh/Manh/PacketFilter/monitor'
+2025-09-22 14:08:19,677 INFO o.a.j.s.FileServer: Set new base='/home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3'
+2025-09-22 14:08:19,888 INFO o.a.j.s.SaveService: Testplan (JMX) version: 2.2. Testlog (JTL) version: 2.2
+2025-09-22 14:08:19,922 INFO o.a.j.s.SaveService: Using SaveService properties version 5.0
+2025-09-22 14:08:19,926 INFO o.a.j.s.SaveService: Using SaveService properties file encoding UTF-8
+2025-09-22 14:08:19,930 INFO o.a.j.s.SaveService: Loading file: /home/maimanh/Manh/PacketFilter/monitor/apache-jmeter-5.6.3/test.jmx
+2025-09-22 14:08:20,013 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/html is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-22 14:08:20,014 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xhtml+xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-22 14:08:20,014 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-22 14:08:20,014 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2025-09-22 14:08:20,014 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/vnd.wap.wml is org.apache.jmeter.protocol.http.parser.RegexpHTMLParser
+2025-09-22 14:08:20,014 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/css is org.apache.jmeter.protocol.http.parser.CssParser
+2025-09-22 14:08:20,058 INFO o.a.j.JMeter: Creating summariser <summary>
+2025-09-22 14:08:20,075 INFO o.a.j.e.StandardJMeterEngine: Running the test!
+2025-09-22 14:08:20,076 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2025-09-22 14:08:20,077 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2025-09-22 14:08:20,096 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must contain the string: '.functions.'
+2025-09-22 14:08:20,096 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must not contain the string: '.gui.'
+2025-09-22 14:08:20,481 INFO o.a.j.JMeter: Running test (1758524900481)
+2025-09-22 14:08:20,512 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : Thread Group
+2025-09-22 14:08:20,513 INFO o.a.j.e.StandardJMeterEngine: Starting 1 threads for group Thread Group.
+2025-09-22 14:08:20,513 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
+2025-09-22 14:08:20,513 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=1 ramp-up=0 delayedStart=false
+2025-09-22 14:08:20,517 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2025-09-22 14:08:20,517 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
+2025-09-22 14:08:20,524 INFO o.a.j.t.JMeterThread: Thread started: Thread Group 1-1
+2025-09-22 14:08:20,654 INFO o.a.j.p.h.s.HTTPHCAbstractImpl: Local host = maimanh
+2025-09-22 14:08:20,673 INFO o.a.j.p.h.s.HTTPHC4Impl: HTTP request retry count = 0
+2025-09-22 14:08:20,678 INFO o.a.j.s.SampleResult: Note: Sample TimeStamps are START times
+2025-09-22 14:08:20,678 INFO o.a.j.s.SampleResult: sampleresult.default.encoding is set to UTF-8
+2025-09-22 14:08:20,678 INFO o.a.j.s.SampleResult: sampleresult.useNanoTime=true
+2025-09-22 14:08:20,678 INFO o.a.j.s.SampleResult: sampleresult.nanoThreadSleep=5000
+2025-09-22 14:08:30,009 INFO o.a.j.r.Summariser: summary +    461 in 00:00:10 =   48.4/s Avg:     0 Min:     0 Max:    36 Err:     0 (0.00%) Active: 1 Started: 1 Finished: 0
+2025-09-22 14:09:00,008 INFO o.a.j.r.Summariser: summary +   1500 in 00:00:30 =   50.0/s Avg:     0 Min:     0 Max:     3 Err:     0 (0.00%) Active: 1 Started: 1 Finished: 0
+2025-09-22 14:09:00,009 INFO o.a.j.r.Summariser: summary =   1961 in 00:00:40 =   49.6/s Avg:     0 Min:     0 Max:    36 Err:     0 (0.00%)
+2025-09-22 14:09:00,508 INFO o.a.j.t.JMeterThread: Thread finished: Thread Group 1-1
+2025-09-22 14:09:00,509 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
+2025-09-22 14:09:00,510 INFO o.a.j.r.Summariser: summary +     25 in 00:00:01 =   49.8/s Avg:     0 Min:     0 Max:     1 Err:     0 (0.00%) Active: 0 Started: 1 Finished: 1
+2025-09-22 14:09:00,511 INFO o.a.j.r.Summariser: summary =   1986 in 00:00:40 =   49.6/s Avg:     0 Min:     0 Max:    36 Err:     0 (0.00%)

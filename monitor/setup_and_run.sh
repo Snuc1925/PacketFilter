@@ -16,7 +16,7 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Install Python dependencies inside venv
-pip install psutil matplotlib pandas plotly mpld3
+# pip install psutil matplotlib pandas plotly mpld3
 
 # Check for victim-ns namespace
 if ! ip netns list | grep -q victim-ns; then

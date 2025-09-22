@@ -1,0 +1,24 @@
+server {
+    listen 80;
+    server_name 192.168.100.1;
+
+    include /etc/nginx/blacklist.conf;
+
+    location / {
+        limit_req zone=perip;
+# return 200 "ok";
+
+#        proxy_pass http://127.0.0.1:5000;
+#        proxy_set_header Host $host;
+#        proxy_set_header X-Real-IP $remote_addr;
+#        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#        proxy_set_header X-Forwarded-Proto $scheme;
+        try_files "" @static_response;
+    }
+
+    location @static_response {
+        # Đặt response tĩnh của bạn ở đây
+        return 200 '{"status": "ok"}\n';
+        add_header Content-Type 'application/json';
+    }
+}

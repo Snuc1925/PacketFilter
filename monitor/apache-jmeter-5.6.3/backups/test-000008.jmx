@@ -9,10 +9,9 @@
       <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
     </TestPlan>
     <hashTree>
-      <!-- THREAD GROUP: CHỈ CÓ 1 THREAD (USER) -->
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Thread Group">
-        <intProp name="ThreadGroup.num_threads">1</intProp> <!-- 1 thread -->
-        <longProp name="ThreadGroup.duration">40</longProp>
+        <intProp name="ThreadGroup.num_threads">1</intProp>
+        <longProp name="ThreadGroup.duration">60</longProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
@@ -34,18 +33,6 @@
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
         </HTTPSamplerProxy>
-        <hashTree/>
-        <!-- CONSTANT THROUGHPUT TIMER: ĐỂ ĐIỀU CHỈNH TỐC ĐỘ 5 rps (300 req/phút) -->
-        <ConstantThroughputTimer guiclass="TestBeanGUI" testclass="ConstantThroughputTimer" testname="Constant Throughput Timer" enabled="true">
-          <doubleProp>
-            <name>throughput</name>
-            <value>3000.0</value> <!-- 5 request/giây * 60 giây/phút = 300 samples/phút -->
-          </doubleProp>
-          <intProp name="calcMode">2</intProp> <!-- "all active threads in current thread group" -->
-          <!-- Với 1 thread, lựa chọn này cũng phù hợp. -->
-          <!-- Nếu bạn chỉ có 1 thread, bạn cũng có thể chọn "This thread only" (calcMode=1) -->
-          <!-- nhưng "all active threads in current thread group" vẫn hoạt động đúng. -->
-        </ConstantThroughputTimer>
         <hashTree/>
       </hashTree>
       <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report" enabled="true">

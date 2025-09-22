@@ -84,35 +84,42 @@ class Test:
         """Run JMeter test from victim-ns namespace"""
         print("Starting JMeter test...")
         
-        # Generate results file name with timestamp
-        results_file = f"results.jtl"
+        results_file = "results.jtl"
         
         jmeter_cmd = [
             "sudo", "ip", "netns", "exec", "victim-ns",
             self.jmeter_path, "-n", "-t", self.test_jmx_path,
-            "-l", results_file, "-f"   # -f để ghi đè file cũ
+            "-l", results_file, "-f"
         ]
         
         try:
-            # Run JMeter without processing output in real-time as it affects performance
-            jmeter_proc = subprocess.Popen(
+            # Sử dụng subprocess.run để bắt output và chờ lệnh hoàn thành
+            result = subprocess.run(
                 jmeter_cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
+                capture_output=True,  # Bắt stdout và stderr
+                text=True             # Giải mã output thành string
             )
+
+            # In ra output để gỡ lỗi
+            if result.stdout:
+                print("--- JMeter STDOUT ---")
+                print(result.stdout)
             
-            # Wait for JMeter to finish
-            jmeter_proc.wait()
-            
-            # Process results file after test completes
-            if os.path.exists(results_file):
-                self.process_jmeter_results(results_file)
+            # In ra lỗi - ĐÂY LÀ PHẦN QUAN TRỌNG NHẤT
+            if result.stderr:
+                print("--- JMeter STDERR (Lỗi) ---")
+                print(result.stderr)
+
+            # Kiểm tra mã thoát
+            if result.returncode != 0:
+                print(f"\nJMeter test finished with non-zero exit code: {result.returncode}")
             else:
-                print(f"Warning: JMeter results file {results_file} not found")
-                
+                print("\nJMeter test finished successfully.")
+
+        except FileNotFoundError:
+            print(f"Lỗi: Không tìm thấy lệnh 'sudo' hoặc 'ip'. Hoặc đường dẫn JMeter '{self.jmeter_path}' không đúng.")
         except Exception as e:
-            print(f"Error running JMeter test: {e}")
+            print(f"Lỗi không mong muốn khi chạy JMeter: {e}")
   
     def start_test(self):
         """Start all monitoring threads"""
@@ -165,9 +172,14 @@ class Report:
                 'bps': {
                     'time': [],
                     'value': []
+                },
+                'latency': { # Thêm latency
+                    'time': [],
+                    'value': []
                 }             
             }
         }
+
 
     def parse_jmeter_results(self):
         print("------------------------------------------------------")
@@ -188,10 +200,13 @@ class Report:
 
             requests_by_second = {}
             bytes_by_second = {}
+            latency_sum_by_second = {} # Tổng latency theo từng giây
+            latency_count_by_second = {} # Số lượng request theo từng giây để tính trung bình
 
             for line in lines:
                 parts = line.strip().split(",")
-                if len(parts) < 11:
+                # Kiểm tra số lượng cột, đảm bảo có đủ cho Latency (ít nhất 15 cột)
+                if len(parts) < 15: # timestamp (0) đến Latency (14) là 15 cột
                     continue
                 try:
                     # timestamp in ms → convert to s
@@ -199,9 +214,13 @@ class Report:
                     second = timestamp_ms // 1000
 
                     sent_bytes = int(parts[10])  # sentBytes column
+                    latency = int(parts[14])     # Latency column (index 14)
 
                     requests_by_second[second] = requests_by_second.get(second, 0) + 1
                     bytes_by_second[second] = bytes_by_second.get(second, 0) + sent_bytes
+                    
+                    latency_sum_by_second[second] = latency_sum_by_second.get(second, 0) + latency
+                    latency_count_by_second[second] = latency_count_by_second.get(second, 0) + 1
 
                 except ValueError:
                     continue
@@ -223,16 +242,22 @@ class Report:
                 self.data['jmeter']['bps']['time'].append(human_time)
                 self.data['jmeter']['bps']['value'].append(bytes_by_second[second])
 
+                # Tính latency trung bình và thêm vào data
+                avg_latency = latency_sum_by_second[second] / latency_count_by_second[second] if latency_count_by_second[second] > 0 else 0
+                self.data['jmeter']['latency']['time'].append(human_time)
+                self.data['jmeter']['latency']['value'].append(round(avg_latency, 2)) # Làm tròn 2 chữ số thập phân
+
             print("Parsed JMeter RPS:", self.data['jmeter']['rps'])
             print("Parsed JMeter BPS:", self.data['jmeter']['bps'])
+            print("Parsed JMeter Latency:", self.data['jmeter']['latency'])
             print("RPS count:", len(self.data['jmeter']['rps']['time']))
             print("BPS count:", len(self.data['jmeter']['bps']['time']))
+            print("Latency count:", len(self.data['jmeter']['latency']['time']))
 
         except Exception as e:
             print(f"Error parsing JMeter results: {e}")
         print("------------------------------------------------------")
         
-
 
     def parse_nginx_logs(self):
         print("------------------------------------------------------")
@@ -255,12 +280,16 @@ class Report:
 
             for line in log_lines:
                 parts = line.strip().split()
-                if len(parts) < 3:
+                if len(parts) < 4:
                     continue
                 try:
                     timestamp = float(parts[1])       # 1758268008.083
                     second = int(timestamp)           # -> 1758268008
                     bytes_sent = int(parts[2])        # 116
+                    status = int(parts[3])            # 200 
+
+                    if status != 200:
+                        continue
 
                     requests_by_second[second] = requests_by_second.get(second, 0) + 1
                     bytes_by_second[second] = bytes_by_second.get(second, 0) + bytes_sent
@@ -369,59 +398,78 @@ class Report:
             <div class="timestamp">Generated on: {}</div>
         """.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-        
-        # Function to create a chart and metrics table for a given dataset
-        def create_chart_with_metrics(title, time_data, value_data):
-            if not time_data or not value_data or len(time_data) == 0:
-                return f"<div class='chart-container'><h2>{title}</h2><p>No data available</p></div>"
-                
-            # Calculate metrics
-            min_val = min(value_data)
-            max_val = max(value_data)
-            avg_val = sum(value_data) / len(value_data) if value_data else 0
+        # ====================================================================
+        # START: HÀM HELPER ĐỂ CẮT BỎ DỮ LIỆU
+        # ====================================================================
+        def trim_data(time_data, value_data, trim_percentage=10):
+            """
+            Cắt bỏ một tỷ lệ phần trăm dữ liệu ở đầu và cuối.
+            Ví dụ: trim_percentage=10 sẽ cắt 5% ở đầu và 5% ở cuối.
+            """
+            if not value_data or trim_percentage <= 0:
+                return time_data, value_data
+
+            num_points = len(value_data)
+            # Tính số điểm cần cắt ở mỗi đầu
+            trim_count = int(num_points * (trim_percentage / 100.0) / 2)
+
+            # Nếu không có gì để cắt hoặc cắt quá nhiều, trả về dữ liệu gốc
+            if trim_count == 0 or (trim_count * 2) >= num_points:
+                return time_data, value_data
+
+            print(f"Trimming {trim_count} data points from each end...")
             
-            # Create figure and axis
+            # Sử dụng slicing để lấy phần dữ liệu ở giữa
+            return time_data[trim_count:-trim_count], value_data[trim_count:-trim_count]
+
+        # ====================================================================
+        # END: HÀM HELPER
+        # ====================================================================
+
+        def create_chart_with_metrics(title, time_data, value_data):
+            # --- BƯỚC 1: ÁP DỤNG HÀM CẮT BỎ DỮ LIỆU ---
+            # Bạn có thể thay đổi tỷ lệ cắt bỏ ở đây, ví dụ 15%
+            trimmed_time, trimmed_value = trim_data(time_data, value_data, trim_percentage=15)
+            
+            if not trimmed_time or not trimmed_value or len(trimmed_time) == 0:
+                return f"<div class='chart-container'><h2>{title}</h2><p>No data available after trimming</p></div>"
+                
+            # --- BƯỚC 2: TÍNH TOÁN TRÊN DỮ LIỆU ĐÃ CẮT BỎ ---
+            min_val = min(trimmed_value)
+            max_val = max(trimmed_value)
+            avg_val = sum(trimmed_value) / len(trimmed_value) if trimmed_value else 0
+            
             fig, ax = plt.subplots(figsize=(10, 6))
             
-            # Plot data line with label
-            ax.plot(time_data, value_data, '-o', markersize=3, label="Data")
+            # --- BƯỚC 3: VẼ BIỂU ĐỒ VỚI DỮ LIỆU ĐÃ CẮT BỎ ---
+            ax.plot(trimmed_time, trimmed_value, '-o', markersize=3, label="Data")
             
-            # Plot horizontal lines with labels
             ax.axhline(y=min_val, color='g', linestyle='--', alpha=0.7, label=f"Min: {min_val:.2f}")
             ax.axhline(y=max_val, color='r', linestyle='--', alpha=0.7, label=f"Max: {max_val:.2f}")
             ax.axhline(y=avg_val, color='b', linestyle='--', alpha=0.7, label=f"Avg: {avg_val:.2f}")
             
-            # Labels and title
             ax.set_xlabel('Time')
             ax.set_ylabel('Value')
-            ax.set_title(title)
+            ax.set_title(title + " (Trimmed)") # Thêm chữ (Trimmed) vào tiêu đề
             
-            # Add legend properly
             ax.legend()
             
-            # Convert plot to HTML
+            # Tự động điều chỉnh khoảng cách các nhãn trên trục x để tránh chồng chéo
+            fig.autofmt_xdate()
+
             chart_html = mpld3.fig_to_html(fig)
             plt.close(fig)
             
-            # Create metrics summary table
             metrics_table = f"""
             <table class="metrics-table">
-                <tr>
-                    <th>Minimum</th>
-                    <th>Maximum</th>
-                    <th>Average</th>
-                </tr>
-                <tr>
-                    <td>{min_val:.2f}</td>
-                    <td>{max_val:.2f}</td>
-                    <td>{avg_val:.2f}</td>
-                </tr>
+                <tr><th>Minimum</th><th>Maximum</th><th>Average</th></tr>
+                <tr><td>{min_val:.2f}</td><td>{max_val:.2f}</td><td>{avg_val:.2f}</td></tr>
             </table>
             """
             
             return f"""
             <div class="chart-container">
-                <h2>{title}</h2>
+                <h2>{title} (Trimmed)</h2>
                 {chart_html}
                 <h3>Metrics Summary</h3>
                 {metrics_table}
@@ -434,7 +482,7 @@ class Report:
         
         # Nginx CPU chart
         charts.append(create_chart_with_metrics(
-            "Nginx CPU Usage",
+            "Nginx CPU Usage (%)",
             self.data['nginx']['cpu']['time'],
             self.data['nginx']['cpu']['value']
         ))
@@ -466,6 +514,13 @@ class Report:
             self.data['jmeter']['bps']['time'],
             self.data['jmeter']['bps']['value']
         ))
+
+        # JMeter Latency chart 
+        charts.append(create_chart_with_metrics(
+            "JMeter Average Latency (ms)", 
+            self.data['jmeter']['latency']['time'],
+            self.data['jmeter']['latency']['value']
+        ))
         
         # Add all charts to HTML content
         html_content += "".join(charts)
@@ -482,6 +537,7 @@ class Report:
         
         print(f"Report generated: performance_report.html")
 
+
     def generate_report(self):
         # generate .html file 
         self.parse_jmeter_results()
@@ -492,7 +548,7 @@ class Report:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Nginx performance monitoring tool')
-    parser.add_argument('--duration', type=int, default=60,
+    parser.add_argument('--duration', type=int, default=40,
                         help='Duration of the test in seconds')
     
     args = parser.parse_args()
