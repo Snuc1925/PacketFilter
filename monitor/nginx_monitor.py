@@ -6,6 +6,7 @@ import signal
 import re
 import psutil
 import matplotlib.pyplot as plt
+from mpld3 import plugins
 import threading
 from datetime import datetime
 import shutil
@@ -441,21 +442,36 @@ class Report:
             
             fig, ax = plt.subplots(figsize=(10, 6))
             
-            # --- BƯỚC 3: VẼ BIỂU ĐỒ VỚI DỮ LIỆU ĐÃ CẮT BỎ ---
-            ax.plot(trimmed_time, trimmed_value, '-o', markersize=3, label="Data")
-            
-            ax.axhline(y=min_val, color='g', linestyle='--', alpha=0.7, label=f"Min: {min_val:.2f}")
-            ax.axhline(y=max_val, color='r', linestyle='--', alpha=0.7, label=f"Max: {max_val:.2f}")
-            ax.axhline(y=avg_val, color='b', linestyle='--', alpha=0.7, label=f"Avg: {avg_val:.2f}")
+            # --- BƯỚC 3: VẼ BIỂU ĐỒ VÀ LẤY ĐỐI TƯỢNG LINE ---
+            # Lưu ý `[0]` ở cuối để lấy đối tượng line từ danh sách trả về
+            line = ax.plot(trimmed_time, trimmed_value, '-o', markersize=4, label="Data")[0]
             
             ax.set_xlabel('Time')
             ax.set_ylabel('Value')
-            ax.set_title(title + " (Trimmed)") # Thêm chữ (Trimmed) vào tiêu đề
-            
+            ax.set_title(title)
             ax.legend()
-            
-            # Tự động điều chỉnh khoảng cách các nhãn trên trục x để tránh chồng chéo
             fig.autofmt_xdate()
+
+            # ====================================================================
+            # START: THAY ĐỔI THEO YÊU CẦU - THÊM TOOLTIP
+            # ====================================================================
+            # 1. Tạo danh sách các nhãn cho mỗi điểm dữ liệu
+            # Định dạng lại thời gian để hiển thị đẹp hơn trong tooltip
+            # Giả định trimmed_time chứa các đối tượng datetime
+            labels = [
+                f"""<div style='padding: 5px;'>
+                        Time: {t}<br>
+                        Value: <strong>{v:.2f}</strong>
+                    </div>"""
+                for t, v in zip(trimmed_time, trimmed_value)
+            ]
+
+            # 2. Tạo và kết nối plugin tooltip với biểu đồ
+            tooltip = plugins.PointHTMLTooltip(line, labels=labels, voffset=10, hoffset=10)
+            plugins.connect(fig, tooltip)
+            # ====================================================================
+            # END: THAY ĐỔI
+            # ====================================================================
 
             chart_html = mpld3.fig_to_html(fig)
             plt.close(fig)
@@ -469,7 +485,7 @@ class Report:
             
             return f"""
             <div class="chart-container">
-                <h2>{title} (Trimmed)</h2>
+                <h2>{title}</h2>
                 {chart_html}
                 <h3>Metrics Summary</h3>
                 {metrics_table}
@@ -548,14 +564,14 @@ class Report:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Nginx performance monitoring tool')
-    parser.add_argument('--duration', type=int, default=40,
+    parser.add_argument('--duration', type=int, default=100,
                         help='Duration of the test in seconds')
     
     args = parser.parse_args()
 
-    test = Test(args.duration)
+    # test = Test(args.duration)
     try:
-        test.start_test()
+        # test.start_test()
         report = Report()
         report.generate_report()
     except KeyboardInterrupt:
