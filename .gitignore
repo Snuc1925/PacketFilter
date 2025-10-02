@@ -1,7 +1,8 @@
 ../test
 build/
 venv/
-monitor/access.log
 .vscode/
 *.pcap
 handshake_logs/
+*.jtl
+*.log

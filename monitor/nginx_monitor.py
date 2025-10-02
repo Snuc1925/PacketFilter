@@ -564,14 +564,14 @@ class Report:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Nginx performance monitoring tool')
-    parser.add_argument('--duration', type=int, default=100,
+    parser.add_argument('--duration', type=int, default=40,
                         help='Duration of the test in seconds')
     
     args = parser.parse_args()
 
-    # test = Test(args.duration)
+    test = Test(args.duration)
     try:
-        # test.start_test()
+        test.start_test()
         report = Report()
         report.generate_report()
     except KeyboardInterrupt:

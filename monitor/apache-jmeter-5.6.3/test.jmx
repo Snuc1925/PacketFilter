@@ -12,7 +12,7 @@
       <!-- THREAD GROUP: CHỈ CÓ 1 THREAD (USER) -->
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Thread Group">
         <intProp name="ThreadGroup.num_threads">1</intProp> <!-- 1 thread -->
-        <longProp name="ThreadGroup.duration">100</longProp>
+        <longProp name="ThreadGroup.duration">40</longProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
